@@ -1,0 +1,66 @@
+{% extends layout %}
+{% block content %}
+<div class="row-between">
+  <h1>Products <span class="faint small">({{ total }})</span></h1>
+  <a class="btn" href="{{ base }}/products/new">+ Add product</a>
+</div>
+<form class="row section" method="get" action="{{ base }}/products">
+  <label class="sr-only" for="pq">Search</label>
+  <input id="pq" name="q" type="search" value="{{ q }}" placeholder="Name or SKU">
+  <label class="sr-only" for="ps">Status</label>
+  <select id="ps" name="status">
+    <option value="">All statuses</option>
+    {% for s in statuses %}<option value="{{ s.value }}" {% if status == s.value %}selected{% endif %}>{{ s.value|capitalize }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-sm btn-quiet" type="submit">Filter</button>
+</form>
+{% if products %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Product</th>{% if scope.is_admin %}<th>Store</th>{% endif %}<th>Sizes &amp; price</th><th class="num">Stock</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for p in products %}
+      {% set stock = p.variants|map(attribute="inventory")|select|map(attribute="quantity")|sum %}
+      <tr>
+        <td>
+          <a href="{{ base }}/products/{{ p.id }}/edit"><strong>{{ p.name }}</strong></a>
+          <div class="small faint">{{ p.category.name }}{% if p.is_featured %} · Featured{% endif %}{% if p.is_seasonal %} · Seasonal{% endif %}{% if not p.images %} · <span class="low">No photo</span>{% endif %}</div>
+          {% if p.status.value == "rejected" and p.rejection_reason %}<div class="small out">Rejected: {{ p.rejection_reason }}</div>{% endif %}
+        </td>
+        {% if scope.is_admin %}<td class="small">{{ p.store.name }}</td>{% endif %}
+        <td class="small">{% for v in p.variants if v.is_active %}{{ v.label }}: {{ (v.sale_price_paise if v.sale_price_paise is not none else v.price_paise)|rupees }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+        <td class="num {{ 'out' if stock == 0 else '' }}">{{ stock }}</td>
+        <td>{{ ui.status_pill(p.status, None) }}</td>
+        <td>
+          <div class="row">
+            <a class="btn btn-sm btn-quiet" href="{{ base }}/products/{{ p.id }}/edit">Edit</a>
+            <a class="btn btn-sm btn-quiet" href="{{ base }}/products/{{ p.id }}/clone" title="Copy this product to make a new size or similar item">Clone</a>
+            {% if p.status.value == "approved" %}<a class="btn btn-sm btn-quiet" href="/p/{{ p.slug }}" target="_blank" rel="noopener">View</a>{% endif %}
+            {% if scope.is_admin and p.status.value == "pending" %}
+            <form method="post" action="/admin/products/{{ p.id }}/review" class="inline-form">{{ ui.csrf(csrf_token) }}<input type="hidden" name="back" value="/admin/products?status=pending"><button class="btn btn-sm" name="decision" value="approve">Approve</button></form>
+            <details class="edit"><summary>Reject</summary>
+              <form method="post" action="/admin/products/{{ p.id }}/review">{{ ui.csrf(csrf_token) }}<input type="hidden" name="back" value="/admin/products?status=pending">
+                <label for="rr-{{ p.id }}" class="small">Reason for the seller</label><input id="rr-{{ p.id }}" name="reason" required maxlength="300">
+                <button class="btn btn-sm btn-danger" name="decision" value="reject">Reject</button></form>
+            </details>
+            {% endif %}
+            {% if scope.is_admin and p.status.value == "approved" %}
+            <form method="post" action="/admin/products/{{ p.id }}/review" class="inline-form">{{ ui.csrf(csrf_token) }}<input type="hidden" name="back" value="/admin/products"><button class="btn btn-sm btn-quiet" name="decision" value="{{ 'unfeature' if p.is_featured else 'feature' }}">{{ "Unfeature" if p.is_featured else "Feature" }}</button></form>
+            {% endif %}
+            {% if p.status.value in ["approved", "pending"] %}
+            <form method="post" action="{{ base }}/products/{{ p.id }}/hide" class="inline-form" data-confirm="Hide {{ p.name }} from the shop?">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm btn-quiet">Hide</button></form>
+            {% elif p.status.value in ["inactive", "draft"] %}
+            <form method="post" action="{{ base }}/products/{{ p.id }}/show" class="inline-form">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm btn-quiet">{{ "Publish" if p.status.value == "draft" else "Show" }}</button></form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ ui.pagination(page, pages, base ~ "/products", {"q": q, "status": status}) }}
+{% else %}
+{{ ui.empty("No products yet" if not (q or status) else "No products match", "Add your first product. It takes about a minute.", base ~ "/products/new", "+ Add product") }}
+{% endif %}
+{% endblock %}

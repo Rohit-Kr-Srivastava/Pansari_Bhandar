@@ -1,0 +1,12 @@
+{% extends "manage/layout_base.html" %}
+{% set area_title = user.seller_profile.store.name if user.seller_profile and user.seller_profile.store else "My shop" %}
+{% set area_tag = "Seller" %}
+{% set menu = [
+  ("/seller", "Dashboard"),
+  ("/seller/products", "Products"),
+  ("/seller/products/new", "Add product"),
+  ("/seller/inventory", "Inventory"),
+  ("/seller/orders", "Orders"),
+  ("/seller/store", "Store profile"),
+  ("/seller/delivery", "Delivery settings"),
+] %}

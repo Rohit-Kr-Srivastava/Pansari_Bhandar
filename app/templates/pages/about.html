@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  {{ ui.breadcrumbs(meta.breadcrumbs) }}
+  <div class="story section">
+    <div>
+      {% if site.established_year %}<span class="hero-est">Since {{ site.established_year }}</span>{% endif %}
+      <h1>{{ site.story_title }}</h1>
+      {% if site.business_name_hi %}<p class="hi" lang="hi">{{ site.business_name }} · {{ site.business_name_hi }}</p>{% endif %}
+    </div>
+    <div class="prose">
+      {% for p in site.story_paragraphs %}<p>{{ p }}</p>
+      {% else %}<p>{{ site.business_name }} is a pansari and general store{% if site.locality %} in {{ site.locality }}, {{ site.state }}{% endif %}. We stock spices and masala, jadi-buti, puja samagri, shringar items and everyday needs, sold loose or packed in the size you need.</p>
+      {% endfor %}
+      <p><a class="btn btn-quiet" href="/contact">Visit the shop</a> {% if wa_contact %}<a class="btn btn-wa" href="{{ wa_contact }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} WhatsApp us</a>{% endif %}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

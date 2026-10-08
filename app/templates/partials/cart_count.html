@@ -1,0 +1,1 @@
+<span id="cart-count" class="badge" data-count="{{ cart_count or 0 }}" {% if oob is not defined or oob %}hx-swap-oob="true"{% endif %}>{% if cart_count %}{{ cart_count }}<span class="sr-only"> items</span>{% endif %}</span>

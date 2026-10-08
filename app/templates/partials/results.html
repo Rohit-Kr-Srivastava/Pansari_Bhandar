@@ -1,0 +1,18 @@
+{% import "components/ui.html" as ui %}
+<section id="results" class="results-wrap">
+  <p class="faint small" role="status">{{ page.total }} product{{ "" if page.total == 1 else "s" }}{% if params.q %} for “{{ params.q }}”{% endif %}</p>
+  {% if page.items %}
+  <div class="products">
+    {% for view in page.items %}{{ ui.product_card(view, csrf_token) }}{% endfor %}
+  </div>
+  {{ ui.pagination(page.page, page.pages, base_url, params, "results") }}
+  {% else %}
+    {% if params.q %}
+    {{ ui.empty("No products found", "Try a simpler word, such as haldi, jeera or agarbatti, or browse a category.", "/shop", "Browse all products", "search") }}
+    {% elif params.min or params.max or params.in_stock %}
+    {{ ui.empty("Nothing matches these filters", "Try a wider price range.", base_url, "Clear filters", "filter") }}
+    {% else %}
+    {{ ui.empty("Coming soon", "We are adding products to this section. Ask us on WhatsApp if you need something.", "/shop", "Browse all products") }}
+    {% endif %}
+  {% endif %}
+</section>

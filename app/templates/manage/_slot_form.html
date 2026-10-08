@@ -1,0 +1,11 @@
+{% set sid = slot.id if slot else "new" %}
+<form method="post" action="{{ action }}" class="section">
+  {{ ui.csrf(csrf_token) }}
+  <div class="form-grid">
+    <div class="field"><label for="ss-{{ sid }}">From</label><input id="ss-{{ sid }}" name="start_time" type="time" required value="{{ slot.start_time.strftime('%H:%M') if slot else '' }}"></div>
+    <div class="field"><label for="se-{{ sid }}">To</label><input id="se-{{ sid }}" name="end_time" type="time" required value="{{ slot.end_time.strftime('%H:%M') if slot else '' }}"></div>
+    <div class="field full"><label for="sl-{{ sid }}">Label <span class="faint small">(optional)</span></label><input id="sl-{{ sid }}" name="label" maxlength="60" value="{{ slot.label if slot else '' }}" placeholder="10 am - 1 pm"></div>
+    <div class="field"><label class="check"><input type="checkbox" name="is_active" value="1" {% if not slot or slot.is_active %}checked{% endif %}> Active</label></div>
+  </div>
+  <button class="btn btn-sm" type="submit">{{ "Save" if slot else "Add slot" }}</button>
+</form>

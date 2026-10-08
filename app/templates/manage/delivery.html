@@ -1,0 +1,77 @@
+{% extends layout %}
+{% block content %}
+{% set q = "?store=" ~ store.id if scope.is_admin else "" %}
+<div class="row-between">
+  <h1>Delivery settings</h1>
+  {% if scope.is_admin and stores|length > 1 %}
+  <form method="get" action="/admin/delivery" class="row">
+    <label class="sr-only" for="ds">Store</label>
+    <select id="ds" name="store">{% for s in stores %}<option value="{{ s.id }}" {% if s.id == store.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select>
+    <button class="btn btn-sm btn-quiet" type="submit">Switch</button>
+  </form>
+  {% endif %}
+</div>
+<p class="muted">Customers enter their pincode at checkout. Only pincodes listed here get home delivery.{% if scope.is_admin %} Settings for <strong>{{ store.name }}</strong>.{% endif %}</p>
+{% for k, msg in errors.items() %}<div class="alert alert-error">{{ msg }}</div>{% endfor %}
+
+<section class="form-card" aria-labelledby="h-zones">
+  <h2 id="h-zones">Serviceable pincodes</h2>
+  {% if zones %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Pincode</th><th>Area</th><th class="num">Fee</th><th class="num">Free above</th><th class="num">Min order</th><th>Same day</th><th>Days</th><th>Active</th><th></th></tr></thead>
+      <tbody>
+      {% for z in zones %}
+        <tr>
+          <td><strong>{{ z.pincode }}</strong></td><td>{{ z.area_name or "" }}</td>
+          <td class="num">{{ z.delivery_fee_paise|rupees }}</td>
+          <td class="num">{{ z.free_delivery_above_paise|rupees if z.free_delivery_above_paise is not none else "—" }}</td>
+          <td class="num">{{ z.min_order_paise|rupees if z.min_order_paise else "—" }}</td>
+          <td>{% if z.same_day_available %}Yes{% if z.same_day_cutoff %}, by {{ z.same_day_cutoff.strftime("%H:%M") }}{% endif %}{% else %}No{% endif %}</td>
+          <td>{{ z.estimated_days }}</td>
+          <td>{{ "Yes" if z.is_active else "No" }}</td>
+          <td>
+            <details class="edit"><summary>Edit</summary>
+              {% with zone=z, action=base ~ "/delivery/zones/" ~ z.id ~ q %}{% include "manage/_zone_form.html" %}{% endwith %}
+              <form method="post" action="{{ base }}/delivery/zones/{{ z.id }}/delete{{ q }}" data-confirm="Stop delivering to {{ z.pincode }}?">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm btn-danger" type="submit">Remove pincode</button></form>
+            </details>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="muted">No pincodes yet. Add the pincodes you deliver to.</p>{% endif %}
+  <details class="edit section" {% if not zones %}open{% endif %}><summary><strong>+ Add a pincode</strong></summary>
+    {% with zone=None, action=base ~ "/delivery/zones" ~ q %}{% include "manage/_zone_form.html" %}{% endwith %}
+  </details>
+</section>
+
+<div class="grid-2">
+  <section class="form-card" aria-labelledby="h-slots">
+    <h2 id="h-slots">Delivery time slots</h2>
+    <p class="small muted">Customers choose one of these at checkout. Leave empty to skip slot choice.</p>
+    {% for s in slots %}
+    <details class="edit">
+      <summary>{{ s.label }} ({{ s.start_time.strftime("%H:%M") }}–{{ s.end_time.strftime("%H:%M") }}){% if not s.is_active %} · off{% endif %}</summary>
+      {% with slot=s, action=base ~ "/delivery/slots/" ~ s.id ~ q %}{% include "manage/_slot_form.html" %}{% endwith %}
+      <form method="post" action="{{ base }}/delivery/slots/{{ s.id }}/delete{{ q }}" data-confirm="Remove this slot?">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm btn-danger" type="submit">Remove slot</button></form>
+    </details>
+    {% else %}<p class="muted">No slots.</p>{% endfor %}
+    <details class="edit section"><summary><strong>+ Add a slot</strong></summary>
+      {% with slot=None, action=base ~ "/delivery/slots" ~ q %}{% include "manage/_slot_form.html" %}{% endwith %}
+    </details>
+  </section>
+
+  <section class="form-card" aria-labelledby="h-opts">
+    <h2 id="h-opts">Pickup and delivery radius</h2>
+    <form method="post" action="{{ base }}/delivery/options{{ q }}">
+      {{ ui.csrf(csrf_token) }}
+      {{ ui.checkbox("pickup_available", "Customers can pick up orders from the shop", store.pickup_available) }}
+      {{ ui.textarea("pickup_instructions", "Pickup instructions", store.pickup_instructions, rows=2, hint="e.g. Collect from the counter, 9 am to 8 pm.") }}
+      {{ ui.field("delivery_radius_km", "Delivery radius (km)", store.delivery_radius_km if store.delivery_radius_km is not none else "", type="number", attrs='step="0.1" min="0" max="100"', hint="Shown to customers as guidance. The pincode list decides who gets delivery.") }}
+      <button class="btn" type="submit">Save</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

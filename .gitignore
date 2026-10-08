@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+# uploaded product images (production keeps them on the Railway volume)
+media/
+_to_delete/
+*.tar.gz
+.claude/settings.local.json

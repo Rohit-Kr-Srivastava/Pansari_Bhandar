@@ -1,0 +1,49 @@
+{% extends layout %}
+{% block content %}
+<h1>Homepage</h1>
+<form method="post" action="/admin/homepage" enctype="multipart/form-data" data-once>
+  {{ ui.csrf(csrf_token) }}
+  <section class="form-card">
+    <h2>Announcement bar</h2>
+    {{ ui.field("announcement", "Announcement", cfg.announcement, hint="e.g. Free delivery in Gomia above ₹499 this Diwali. Keep it short.") }}
+    {{ ui.checkbox("announcement_enabled", "Show the announcement bar", cfg.announcement_enabled) }}
+  </section>
+  <section class="form-card">
+    <h2>Hero</h2>
+    {{ ui.field("hero_title", "Headline", cfg.hero_title, required=True) }}
+    {{ ui.field("hero_subtitle", "Sub-heading", cfg.hero_subtitle) }}
+    {% if cfg.hero_image %}<p><img src="{{ cfg.hero_image|media('sm') }}" alt="Current hero photo" width="200" height="150"></p>
+    {{ ui.checkbox("remove_hero_image", "Remove this photo", False) }}{% endif %}
+    <div class="field"><label for="f-hero">Shop photo <span class="faint small">(optional, landscape)</span></label>
+      <input id="f-hero" name="hero_image" type="file" accept="image/jpeg,image/png,image/webp">
+      <div class="hint">A real photo of your shop counter or shelves works best. Without a photo, category shortcuts are shown.</div></div>
+  </section>
+  <section class="form-card">
+    <h2>Product rows</h2>
+    <p class="small muted">Each row shows products from the chosen categories. Rows with no products are hidden automatically.</p>
+    {% for rail in cfg.rails %}
+    {% set i = loop.index0 %}
+    <fieldset class="variant">
+      <legend>{{ rail.title }}</legend>
+      <div class="form-grid">
+        <div class="field"><label for="rt-{{ i }}">Title</label><input id="rt-{{ i }}" name="rail_{{ i }}_title" value="{{ rail.title }}" maxlength="60"></div>
+        <div class="field"><label for="rh-{{ i }}">Hindi title</label><input id="rh-{{ i }}" name="rail_{{ i }}_title_hi" value="{{ rail.title_hi }}" maxlength="60"></div>
+        <div class="field full"><label for="rc-{{ i }}">Categories</label>
+          <select id="rc-{{ i }}" name="rail_{{ i }}_cats" multiple size="5">
+            {% for c in categories %}<option value="{{ c.slug }}" {% if c.slug in rail.category_slugs %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+          </select><div class="hint">Hold Ctrl (or long-press on a phone) to choose more than one.</div></div>
+      </div>
+      <div class="row">
+        {{ ui.checkbox("rail_" ~ i ~ "_enabled", "Show this row", rail.enabled) }}
+        {{ ui.checkbox("rail_" ~ i ~ "_seasonal", "Only seasonal items", rail.seasonal_only) }}
+      </div>
+    </fieldset>
+    {% endfor %}
+  </section>
+  <section class="form-card">
+    <h2>Why choose us</h2>
+    {{ ui.textarea("why_points", "Points (one per line, up to 6)", cfg.why_points|join("\n"), rows=5) }}
+  </section>
+  <div class="actions-bar"><button class="btn" type="submit" data-busy="Saving…">Save homepage</button><a class="btn btn-quiet" href="/" target="_blank" rel="noopener">View homepage</a></div>
+</form>
+{% endblock %}

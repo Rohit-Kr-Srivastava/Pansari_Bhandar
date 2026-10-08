@@ -1,0 +1,46 @@
+{% extends layout %}
+{% block content %}
+<h1>Sellers</h1>
+<nav class="subcats" aria-label="Seller status">
+  <a class="chip" href="/admin/sellers" {% if not status %}aria-current="page"{% endif %}>All</a>
+  {% for s in statuses %}<a class="chip" href="/admin/sellers?status={{ s.value }}" {% if status == s.value %}aria-current="page"{% endif %}>{{ s.value|capitalize }}</a>{% endfor %}
+</nav>
+{% if profiles %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Shop</th><th>Contact</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for p in profiles %}
+      <tr>
+        <td><strong>{{ p.business_name }}</strong>{% if p.store %}<br><a class="small" href="/admin/stores/{{ p.store.id }}">Store profile</a> · <a class="small" href="/admin/delivery?store={{ p.store.id }}">Delivery</a>{% endif %}
+          {% if p.rejection_reason and p.status.value == "rejected" %}<div class="small out">{{ p.rejection_reason }}</div>{% endif %}</td>
+        <td class="small">{{ p.user.full_name }}<br>{{ p.user.phone or "" }}<br>{{ p.user.email or "" }}</td>
+        <td class="small nowrap">{{ p.created_at|ist("%d %b %Y") }}</td>
+        <td>{{ ui.status_pill(p.status, None) }}</td>
+        <td>
+          <div class="row">
+          {% if p.status.value in ("pending", "rejected") %}
+            <form method="post" action="/admin/sellers/{{ p.id }}/approve" class="inline-form">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm">Approve</button></form>
+          {% endif %}
+          {% if p.status.value == "pending" %}
+            <details class="edit"><summary>Reject</summary>
+              <form method="post" action="/admin/sellers/{{ p.id }}/reject">{{ ui.csrf(csrf_token) }}
+                <label class="small" for="sr-{{ p.id }}">Reason</label><input id="sr-{{ p.id }}" name="reason" required maxlength="300">
+                <button class="btn btn-sm btn-danger">Reject</button></form>
+            </details>
+          {% endif %}
+          {% if p.status.value == "approved" %}
+            <form method="post" action="/admin/sellers/{{ p.id }}/suspend" class="inline-form" data-confirm="Suspend {{ p.business_name }}? Their products will be hidden.">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm btn-danger">Suspend</button></form>
+          {% endif %}
+          {% if p.status.value == "suspended" %}
+            <form method="post" action="/admin/sellers/{{ p.id }}/reinstate" class="inline-form">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm">Reinstate</button></form>
+          {% endif %}
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}{{ ui.empty("No sellers here", "Sellers register at /seller/register.") }}{% endif %}
+{% endblock %}

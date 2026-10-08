@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+{% if is_pickup %}{% set FLOW = ["pending", "confirmed", "preparing", "ready", "delivered"] %}
+{% else %}{% set FLOW = ["pending", "confirmed", "preparing", "ready", "out_for_delivery", "delivered"] %}{% endif %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="/account">My orders</a></li><li><span aria-current="page">{{ order.order_no }}</span></li></ol></nav>
+  <div class="listing-head row-between">
+    <h1>Order {{ order.order_no }}</h1>
+    {{ ui.status_pill(order.status, labels) }}
+  </div>
+  <div class="checkout-layout">
+    <div>
+      <section class="panel">
+        <h2>Status</h2>
+        {% if order.status.value in ["cancelled", "returned"] %}
+          <p>This order was {{ labels[order.status]|lower }}.{% if order.cancel_reason %} {{ order.cancel_reason }}{% endif %}</p>
+        {% else %}
+        {% set current = FLOW.index(order.status.value) if order.status.value in FLOW else 0 %}
+        <ol class="timeline">
+          {% for st in FLOW %}<li class="{{ 'done' if loop.index0 <= current else '' }}">{{ labels[st] }}</li>{% endfor %}
+        </ol>
+        {% endif %}
+        {% set d = order.deliveries[0] if order.deliveries else None %}
+        {% if d %}<p class="small muted">{{ "Store pickup" if is_pickup else "Home delivery" }}{% if d.scheduled_date and not is_pickup %} · expected {{ d.scheduled_date.strftime("%a, %d %b") }}{% endif %}{% if d.slot_label %}, {{ d.slot_label }}{% endif %}</p>{% endif %}
+      </section>
+      <section class="panel">
+        <h2>Items</h2>
+        <ul class="review-list">
+          {% for i in order.items %}<li><span>{{ i.product_name }} {{ i.variant_label }} × {{ i.quantity }}</span><span>{{ i.line_total_paise|rupees }}</span></li>{% endfor %}
+        </ul>
+      </section>
+      {% if order.delivery_address and order.delivery_address.get("line1") %}
+      {% set a = order.delivery_address %}
+      <section class="panel">
+        <h2>Delivery address</h2>
+        <p>{{ a.name }}, {{ a.phone }}<br>{{ a.line1 }}{% if a.line2 %}, {{ a.line2 }}{% endif %}{% if a.landmark %}<br>Landmark: {{ a.landmark }}{% endif %}<br>{{ a.city }} {{ a.pincode }}</p>
+      </section>
+      {% endif %}
+    </div>
+    <aside class="summary">
+      <h2>Payment</h2>
+      <div class="sum-row"><span>Subtotal</span><span>{{ order.subtotal_paise|rupees }}</span></div>
+      {% if order.discount_paise %}<div class="sum-row"><span>Discount</span><span class="save">−{{ order.discount_paise|rupees }}</span></div>{% endif %}
+      <div class="sum-row"><span>Delivery</span><span>{{ order.delivery_fee_paise|rupees if order.delivery_fee_paise else "Free" }}</span></div>
+      <div class="sum-row total"><span>Total</span><span>{{ order.total_paise|rupees }}</span></div>
+      {% for p in order.payments %}<p class="small muted">Cash on delivery · {{ p.status.value|capitalize }}</p>{% endfor %}
+      {% if wa_order %}<a class="btn btn-wa btn-block btn-sm" href="{{ wa_order }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} Help with this order</a>{% endif %}
+      {% if can_cancel %}
+      <form action="/account/orders/{{ order.order_no }}/cancel" method="post" data-confirm="Cancel this order?" class="section">
+        {{ ui.csrf(csrf_token) }}
+        <label for="reason" class="small">Reason (optional)</label>
+        <input id="reason" name="reason" type="text" maxlength="200">
+        <button class="btn btn-danger btn-block btn-sm" type="submit">Cancel order</button>
+      </form>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

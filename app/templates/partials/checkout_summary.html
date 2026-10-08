@@ -1,0 +1,15 @@
+<section id="checkout-summary" class="summary" aria-labelledby="h-csum" {% if oob is defined and oob %}hx-swap-oob="true"{% endif %}>
+  <h2 id="h-csum">Order summary</h2>
+  <ul class="review-list small">
+    {% for ln in summary.ok_lines %}
+    <li><span>{{ ln.product_name }} {{ ln.variant_label }} × {{ ln.quantity }}</span><span class="nowrap">{{ ln.line_total|rupees }}</span></li>
+    {% endfor %}
+  </ul>
+  <div class="sum-row"><span>Subtotal</span><span>{{ summary.subtotal|rupees }}</span></div>
+  {% if summary.savings %}<div class="sum-row small"><span>You save (vs MRP)</span><span class="save">{{ summary.savings|rupees }}</span></div>{% endif %}
+  {% if summary.discount %}<div class="sum-row"><span>Offer ({{ summary.discount_label }})</span><span class="save">−{{ summary.discount|rupees }}</span></div>{% endif %}
+  <div class="sum-row"><span>Delivery</span>
+    <span>{% if r.form.method == "pickup" %}Free (pickup){% elif r.quote.available %}{{ r.delivery_fee|rupees if r.delivery_fee else "Free" }}{% else %}<span class="muted small">Enter pincode</span>{% endif %}</span>
+  </div>
+  <div class="sum-row total"><span>Total</span><span>{{ r.total|rupees }}</span></div>
+</section>

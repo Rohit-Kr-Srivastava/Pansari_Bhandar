@@ -1,0 +1,60 @@
+{# Shared dashboard body. Expects stats, low, popular, recent, labels, base. #}
+<div class="stats">
+  <a class="stat" href="{{ base }}/orders?status=all"><span class="n">{{ stats.today_orders }}</span><span class="l">Orders today</span></a>
+  <div class="stat"><span class="n">{{ stats.today_sales|rupees }}</span><span class="l">Sales today</span></div>
+  <a class="stat {{ 'warn' if stats.pending_orders else '' }}" href="{{ base }}/orders?status=pending"><span class="n">{{ stats.pending_orders }}</span><span class="l">Pending orders</span></a>
+  <a class="stat {{ 'warn' if stats.low_stock else '' }}" href="{{ base }}/inventory?low=1"><span class="n">{{ stats.low_stock }}</span><span class="l">Low-stock items</span></a>
+</div>
+
+<div class="grid-2">
+  <section class="form-card" aria-labelledby="h-open">
+    <div class="row-between"><h2 id="h-open">Orders to handle</h2><a class="small" href="{{ base }}/orders">All orders ›</a></div>
+    {% if recent %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Order</th><th>Placed</th><th>Status</th><th class="num">Total</th></tr></thead>
+        <tbody>
+        {% for o in recent %}
+          <tr>
+            <td><a href="{{ base }}/orders/{{ o.order_no }}">{{ o.order_no }}</a></td>
+            <td class="nowrap small">{{ o.placed_at|ist("%d %b, %I:%M %p") }}</td>
+            <td>{{ ui.status_pill(o.status, labels) }}</td>
+            <td class="num">{{ o.total_paise|rupees }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="muted">No open orders right now.</p>{% endif %}
+  </section>
+
+  <section class="form-card" aria-labelledby="h-low">
+    <div class="row-between"><h2 id="h-low">Low stock</h2><a class="small" href="{{ base }}/inventory?low=1">Update stock ›</a></div>
+    {% if low %}
+    <ul class="review-list">
+      {% for row in low %}
+      <li><span>{{ row.product.name }} · {{ row.variant.label }}</span><span class="{{ 'out' if row.quantity <= 0 else 'low' }}">{{ row.quantity }} left</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">All items are above their low-stock alert.</p>{% endif %}
+  </section>
+
+  <section class="form-card" aria-labelledby="h-pop">
+    <h2 id="h-pop">Popular products (30 days)</h2>
+    {% if popular %}
+    <ul class="review-list">
+      {% for row in popular %}<li><span>{{ row.name }}</span><span class="small">{{ row.quantity }} sold · {{ row.revenue|rupees }}</span></li>{% endfor %}
+    </ul>
+    {% else %}<p class="muted">Sales will show here once orders come in.</p>{% endif %}
+  </section>
+
+  <section class="form-card" aria-labelledby="h-cat">
+    <h2 id="h-cat">Catalogue</h2>
+    <ul class="review-list">
+      <li><span>Live products</span><a href="{{ base }}/products?status=approved">{{ stats.products_live }}</a></li>
+      <li><span>Waiting for approval</span><a href="{{ base }}/products?status=pending">{{ stats.products_pending }}</a></li>
+      {% if stats.sellers_pending is defined %}<li><span>Sellers waiting for approval</span><a href="/admin/sellers?status=pending">{{ stats.sellers_pending }}</a></li>{% endif %}
+    </ul>
+    <p class="section"><a class="btn" href="{{ base }}/products/new">+ Add product</a></p>
+  </section>
+</div>

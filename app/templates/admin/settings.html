@@ -1,0 +1,29 @@
+{% extends layout %}
+{% block content %}
+<h1>Settings</h1>
+<form method="post" action="/admin/settings" data-once>
+  {{ ui.csrf(csrf_token) }}
+  <section class="form-card">
+    <h2>Products and orders</h2>
+    {{ ui.checkbox("require_product_approval", "New and edited seller products need admin approval", cfg.require_product_approval, "Price and stock changes stay live without approval.") }}
+    <div class="form-grid">
+      {{ ui.field("default_low_stock_threshold", "Default low-stock alert", cfg.default_low_stock_threshold, type="number", attrs='min="0" max="10000"') }}
+      {{ ui.field("max_quantity_per_item", "Maximum quantity per item in a cart", cfg.max_quantity_per_item, type="number", attrs='min="1" max="99"') }}
+    </div>
+  </section>
+  <section class="form-card">
+    <h2>Store-wide offer</h2>
+    {{ ui.checkbox("offer_enabled", "Give a percentage discount on larger orders", cfg.offer_enabled) }}
+    <div class="form-grid">
+      {{ ui.field("offer_percent", "Discount %", cfg.offer_percent, type="number", attrs='min="0" max="50"') }}
+      {{ ui.field("offer_min_subtotal", "On orders of at least ₹", cfg.offer_min_subtotal_paise|rupees_plain, attrs='inputmode="decimal"') }}
+      {{ ui.field("offer_max_discount", "Maximum discount ₹ (0 = no limit)", cfg.offer_max_discount_paise|rupees_plain, attrs='inputmode="decimal"') }}
+    </div>
+  </section>
+  <section class="form-card">
+    <h2>Search engines</h2>
+    {{ ui.textarea("meta_description", "Homepage description for Google", cfg.meta_description, rows=3, hint="About 150 characters. Describe the shop naturally; do not repeat keywords.") }}
+  </section>
+  <div class="actions-bar"><button class="btn" type="submit" data-busy="Saving…">Save settings</button></div>
+</form>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  <h1 class="listing-head">Review your order</h1>
+  {% if notice %}<div class="alert alert-error" role="alert">{{ notice }}</div>{% endif %}
+  <form class="checkout-layout" action="/checkout/place" method="post" data-once>
+    {{ ui.csrf(csrf_token) }}
+    <input type="hidden" name="checkout_token" value="{{ token }}">
+    <input type="hidden" name="fingerprint" value="{{ fingerprint }}">
+    {% for key in ["name", "phone", "method", "line1", "line2", "landmark", "city", "pincode", "slot", "payment_method", "note"] %}
+    <input type="hidden" name="{{ key }}" value="{{ f[key] }}">
+    {% endfor %}
+    {% if f.save_address %}<input type="hidden" name="save_address" value="1">{% endif %}
+
+    <div>
+      <section class="panel">
+        <div class="row-between"><h2>{{ ui.icon("user") }} Contact</h2>
+          <button class="link-btn small" type="submit" formaction="/checkout/review?edit=1" formnovalidate>Edit</button></div>
+        <p>{{ f.name }}<br>{{ f.phone }}</p>
+      </section>
+      <section class="panel">
+        <div class="row-between"><h2>{{ ui.icon("truck" if f.method != "pickup" else "store") }} {{ "Store pickup" if f.method == "pickup" else "Delivery address" }}</h2>
+          <button class="link-btn small" type="submit" formaction="/checkout/review?edit=1" formnovalidate>Edit</button></div>
+        {% if f.method == "pickup" %}
+          <p>Collect from the shop{% if site.full_address %}: {{ site.full_address }}{% endif %}.</p>
+        {% else %}
+          <p>{{ f.line1 }}{% if f.line2 %}, {{ f.line2 }}{% endif %}{% if f.landmark %}<br>Landmark: {{ f.landmark }}{% endif %}<br>{{ f.city }} {{ f.pincode }}</p>
+          <p class="small">{{ ui.icon("clock") }} <strong>{{ r.slot.label if r.slot else r.quote.eta_text }}</strong></p>
+        {% endif %}
+      </section>
+      <section class="panel">
+        <h2>{{ ui.icon("cash") }} Payment</h2>
+        {% for p in providers if p.method.value == f.payment_method %}<p><strong>{{ p.label }}</strong><br><span class="small muted">{{ p.description }}</span></p>{% endfor %}
+        {% if f.note %}<p class="small"><strong>Note:</strong> {{ f.note }}</p>{% endif %}
+      </section>
+    </div>
+
+    <aside>
+      {% include "partials/checkout_summary.html" %}
+      <div class="sticky-cta">
+        <button class="btn btn-block" type="submit" data-busy="Placing order…">Place order · {{ r.total|rupees }}</button>
+      </div>
+      <p class="small faint">By placing the order you agree to pay {{ r.total|rupees }} on delivery{% if f.method == "pickup" %} / pickup{% endif %}.</p>
+    </aside>
+  </form>
+</div>
+{% endblock %}

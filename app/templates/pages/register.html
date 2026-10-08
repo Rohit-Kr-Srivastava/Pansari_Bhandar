@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+{% set errors = errors or {} %}
+<div class="wrap auth">
+  <div class="panel">
+    <h1>Create your account</h1>
+    <p class="muted">So you can track orders and check out faster.</p>
+    {% if errors %}<div class="alert alert-error" role="alert">Please correct the highlighted fields.</div>{% endif %}
+    <form action="/register" method="post" data-once novalidate>
+      {{ ui.csrf(csrf_token) }}
+      <input type="hidden" name="next" value="{{ next }}">
+      {{ ui.field("full_name", "Your name", v.full_name, errors=errors, required=True, autocomplete="name") }}
+      {{ ui.field("phone", "Mobile number", v.phone, type="tel", errors=errors, required=True, autocomplete="tel-national", attrs='inputmode="numeric" maxlength="14"') }}
+      {{ ui.field("email", "Email", v.email, type="email", errors=errors, autocomplete="email") }}
+      {{ ui.field("password", "Password", "", type="password", errors=errors, required=True, autocomplete="new-password", hint="At least 8 characters, with letters as well as numbers.") }}
+      <button class="btn btn-block" type="submit" data-busy="Creating account…">Create account</button>
+    </form>
+    <hr class="rule">
+    <p>Already have an account? <a href="/login{% if next %}?next={{ next|urlencode }}{% endif %}">Sign in</a></p>
+    <p class="small muted">Want to sell your products here? <a href="/seller/register">Register as a seller</a>.</p>
+  </div>
+</div>
+{% endblock %}

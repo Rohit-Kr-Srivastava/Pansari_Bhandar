@@ -1,0 +1,31 @@
+{% extends layout %}
+{% macro t_form(t, action, label) %}
+<form method="post" action="{{ action }}" class="section">
+  {{ ui.csrf(csrf_token) }}
+  {% set tid = t.id if t else "new" %}
+  <div class="form-grid">
+    <div class="field"><label for="tn-{{ tid }}">Customer name</label><input id="tn-{{ tid }}" name="name" required maxlength="80" value="{{ t.name if t else '' }}"></div>
+    <div class="field"><label for="tp-{{ tid }}">Place <span class="faint small">(optional)</span></label><input id="tp-{{ tid }}" name="place" maxlength="80" value="{{ (t.place or '') if t else '' }}" placeholder="Gomia"></div>
+    <div class="field full"><label for="tb-{{ tid }}">What they said</label><textarea id="tb-{{ tid }}" name="body" required rows="3" maxlength="1000">{{ t.body if t else '' }}</textarea></div>
+    <div class="field"><label for="tr-{{ tid }}">Stars <span class="faint small">(optional)</span></label>
+      <select id="tr-{{ tid }}" name="rating"><option value="">—</option>{% for n in range(5, 0, -1) %}<option value="{{ n }}" {% if t and t.rating == n %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="ts-{{ tid }}">Order</label><input id="ts-{{ tid }}" name="sort_order" type="number" min="0" value="{{ t.sort_order if t else 0 }}"></div>
+    <div class="field"><label class="check"><input type="checkbox" name="is_active" value="1" {% if not t or t.is_active %}checked{% endif %}> Show on homepage</label></div>
+  </div>
+  <button class="btn btn-sm" type="submit">{{ label }}</button>
+</form>
+{% endmacro %}
+{% block content %}
+<h1>Testimonials</h1>
+<p class="muted small">Only add real words from real customers, with their permission. The section stays hidden until you add one.</p>
+{% for t in rows %}
+<section class="form-card">
+  <p><strong>{{ t.name }}</strong>{% if t.place %}, {{ t.place }}{% endif %}{% if not t.is_active %} · <span class="pill">hidden</span>{% endif %}<br>“{{ t.body }}”</p>
+  <details class="edit"><summary>Edit</summary>
+    {{ t_form(t, "/admin/testimonials/" ~ t.id, "Save") }}
+    <form method="post" action="/admin/testimonials/{{ t.id }}/delete" data-confirm="Delete this testimonial?">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm btn-danger">Delete</button></form>
+  </details>
+</section>
+{% endfor %}
+<section class="form-card"><h2>Add a testimonial</h2>{{ t_form(None, "/admin/testimonials", "Add") }}</section>
+{% endblock %}

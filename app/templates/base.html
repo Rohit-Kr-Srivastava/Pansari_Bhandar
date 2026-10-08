@@ -1,0 +1,48 @@
+{% import "components/ui.html" as ui %}
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ meta.title }}</title>
+  {% if meta.description %}<meta name="description" content="{{ meta.description }}">{% endif %}
+  <meta name="robots" content="{{ meta.robots }}">
+  {% if meta.canonical %}<link rel="canonical" href="{{ meta.canonical }}">{% endif %}
+  <meta property="og:site_name" content="{{ site.business_name }}">
+  <meta property="og:title" content="{{ meta.title }}">
+  {% if meta.description %}<meta property="og:description" content="{{ meta.description }}">{% endif %}
+  <meta property="og:type" content="{{ meta.og_type }}">
+  {% if meta.canonical %}<meta property="og:url" content="{{ meta.canonical }}">{% endif %}
+  <meta property="og:image" content="{{ meta.og_image or (site_url ~ '/static/img/og-default.png') }}">
+  <meta property="og:locale" content="en_IN">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#9b2c1f">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false, "historyCacheSize": 0, "selfRequestsOnly": true, "timeout": 20000}'>
+  <link rel="icon" href="{{ static_url('img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ static_url('css/app.css') }}">
+  <script src="{{ static_url('vendor/htmx.min.js') }}" defer></script>
+  <script src="{{ static_url('js/app.js') }}" defer></script>
+  {% for ld in meta.jsonld %}
+  <script type="application/ld+json">{{ ld|tojson }}</script>
+  {% endfor %}
+  {% block head %}{% endblock %}
+</head>
+<body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+{% include "partials/icons.html" %}
+<a class="skip" href="#main">Skip to content</a>
+{% block body %}
+{% include "partials/header.html" %}
+<main id="main">
+  {% if flashes %}
+  <div class="wrap">
+    {% for kind, message in flashes %}<div class="alert alert-{{ kind }}" role="{{ 'alert' if kind == 'error' else 'status' }}">{{ message }}</div>{% endfor %}
+  </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+{% include "partials/footer.html" %}
+{% endblock %}
+<div id="toasts" class="toasts" aria-live="polite"></div>
+</body>
+</html>

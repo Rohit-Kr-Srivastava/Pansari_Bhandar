@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap auth">
+  <div class="panel">
+    <p class="faint small">Error {{ status }}</p>
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    <div class="row">
+      <a class="btn" href="/">Go to homepage</a>
+      <a class="btn btn-quiet" href="/shop">Browse products</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

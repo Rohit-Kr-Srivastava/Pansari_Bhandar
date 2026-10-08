@@ -1,0 +1,16 @@
+.git
+.venv
+.env
+.env.*
+!.env.example
+media
+_to_delete
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.claude
+tests
+docs
+*.tar.gz

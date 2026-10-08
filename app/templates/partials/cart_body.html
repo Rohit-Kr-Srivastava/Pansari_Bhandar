@@ -1,0 +1,74 @@
+{% import "components/ui.html" as ui %}
+<div id="cart-body">
+{% if summary.is_empty %}
+  {{ ui.empty("Your cart is empty", "Add spices, puja samagri or daily needs to get started.", "/shop", "Start shopping", "cart") }}
+{% else %}
+<div class="cart-layout">
+  <div>
+    {% if summary.has_problems %}
+    <div class="alert alert-error" role="alert">Some items need attention before you can check out.</div>
+    {% endif %}
+    <ul class="cart-lines">
+      {% for ln in summary.lines %}
+      <li class="cart-line">
+        <a class="thumb" href="/p/{{ ln.product_slug }}" tabindex="-1" aria-hidden="true">
+          {% if ln.image_path %}<img src="{{ ln.image_path|media('sm') }}" alt="" width="72" height="72" loading="lazy">{% else %}{{ ui.placeholder(ln.product_name) }}{% endif %}
+        </a>
+        <div>
+          <div class="line-top">
+            <div>
+              <a href="/p/{{ ln.product_slug }}">{{ ln.product_name }}</a>
+              <div class="small muted">{{ ln.variant_label }} · {{ ln.unit_price|rupees }} each{% if ln.mrp > ln.unit_price %} <s class="faint">{{ ln.mrp|rupees }}</s>{% endif %}</div>
+            </div>
+            <strong class="nowrap">{{ ln.line_total|rupees }}</strong>
+          </div>
+          {% if ln.problem %}<div class="line-problem">{{ ln.problem }}</div>{% endif %}
+          <div class="line-controls">
+            <form action="/cart/items/{{ ln.item_id }}" method="post"
+                  hx-post="/cart/items/{{ ln.item_id }}" hx-target="#cart-body" hx-swap="outerHTML"
+                  hx-trigger="change delay:400ms" class="inline-form">
+              {{ ui.csrf(csrf_token) }}
+              <label class="sr-only" for="q-{{ ln.item_id }}">Quantity of {{ ln.product_name }}</label>
+              <div class="qty">
+                <button type="button" data-step="-1" aria-label="Decrease">−</button>
+                <input id="q-{{ ln.item_id }}" name="qty" type="number" value="{{ ln.quantity }}" min="1" max="{{ [ [ln.stock, 1]|max, site.max_quantity_per_item]|min if ln.ok else site.max_quantity_per_item }}" inputmode="numeric">
+                <button type="button" data-step="1" aria-label="Increase">+</button>
+              </div>
+              <noscript><button class="btn btn-sm btn-quiet" type="submit">Update</button></noscript>
+            </form>
+            <form action="/cart/items/{{ ln.item_id }}/remove" method="post"
+                  hx-post="/cart/items/{{ ln.item_id }}/remove" hx-target="#cart-body" hx-swap="outerHTML">
+              {{ ui.csrf(csrf_token) }}
+              <button class="link-btn small" type="submit">{{ ui.icon("trash") }} Remove<span class="sr-only"> {{ ln.product_name }}</span></button>
+            </form>
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    <p><a href="/shop">‹ Continue shopping</a></p>
+  </div>
+
+  <aside class="summary" aria-labelledby="h-sum">
+    <h2 id="h-sum">Order summary</h2>
+    <div class="sum-row"><span>Items ({{ summary.count }})</span><span>{{ summary.mrp_total|rupees }}</span></div>
+    {% if summary.savings %}<div class="sum-row"><span>Savings</span><span class="save">−{{ summary.savings|rupees }}</span></div>{% endif %}
+    {% if summary.discount %}<div class="sum-row"><span>Offer ({{ summary.discount_label }})</span><span class="save">−{{ summary.discount|rupees }}</span></div>{% endif %}
+    <div class="sum-row"><span>Delivery</span><span class="muted small">Calculated at checkout</span></div>
+    <div class="sum-row total"><span>Subtotal</span><span>{{ (summary.subtotal - summary.discount)|rupees }}</span></div>
+    {% if site.has_offer and not summary.discount and site.offer_min_subtotal_paise > summary.subtotal %}
+    <p class="small alert alert-info">Add {{ (site.offer_min_subtotal_paise - summary.subtotal)|rupees }} more to get {{ site.offer_percent }}% off.</p>
+    {% endif %}
+    <div class="sticky-cta">
+      {% if summary.has_problems %}
+      <button class="btn btn-block" type="button" disabled>Fix cart to continue</button>
+      {% else %}
+      <a class="btn btn-block" href="/checkout">Proceed to checkout</a>
+      {% endif %}
+    </div>
+    {% if wa_cart %}<p class="small"><a class="btn btn-wa btn-block btn-sm" href="{{ wa_cart }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} Send this list on WhatsApp</a></p>{% endif %}
+  </aside>
+</div>
+{% endif %}
+{% if hx %}{% with oob=True %}{% include "partials/cart_count.html" %}{% endwith %}{% endif %}
+</div>

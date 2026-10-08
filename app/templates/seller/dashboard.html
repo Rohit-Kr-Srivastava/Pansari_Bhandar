@@ -1,0 +1,5 @@
+{% extends layout %}
+{% block content %}
+<div class="row-between"><h1>Namaste, {{ user.full_name.split(" ")[0] }}</h1><a class="btn" href="/seller/products/new">+ Add product</a></div>
+{% include "manage/_dashboard_body.html" %}
+{% endblock %}

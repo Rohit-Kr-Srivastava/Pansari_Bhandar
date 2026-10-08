@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# 5. Hero #}
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div>
+      {% if site.established_year %}<span class="hero-est">Since {{ site.established_year }}</span>{% endif %}
+      <h1>{{ site.hero_title }}</h1>
+      {% if site.hero_subtitle %}<p>{{ site.hero_subtitle }}</p>{% endif %}
+      <div class="row">
+        <a class="btn" href="/shop">Shop now {{ ui.icon("arrow") }}</a>
+        {% if wa_contact %}<a class="btn btn-quiet" href="{{ wa_contact }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} Order on WhatsApp</a>{% endif %}
+      </div>
+      <ul class="hero-facts">
+        {% if zones %}<li>{{ ui.icon("truck") }} Home delivery in {{ site.locality or "town" }}</li>{% endif %}
+        <li>{{ ui.icon("cash") }} Cash on delivery</li>
+        {% if pickup %}<li>{{ ui.icon("store") }} Store pickup</li>{% endif %}
+      </ul>
+    </div>
+    {% if site.hero_image %}
+    <div class="hero-art"><img src="{{ site.hero_image|media }}" alt="Inside {{ site.business_name }}" width="1200" height="900" fetchpriority="high"></div>
+    {% else %}
+    <nav class="hero-shelf" aria-label="Popular departments">
+      {% for c in nav[:6] %}
+      <a href="/c/{{ c.slug }}">{{ ui.category_icon(c.slug) }}<span>{{ c.name }}</span></a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+  </div>
+</section>
+
+{# 6. Shop by category #}
+{% if nav %}
+<section class="section" aria-labelledby="h-cats">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="h-cats">Shop by category<span class="hi" lang="hi">श्रेणियाँ</span></h2>
+      <a href="/shop">All products ›</a>
+    </div>
+    <div class="cat-grid">
+      {% for c in nav %}
+      <a class="cat-tile" href="/c/{{ c.slug }}">
+        <span class="cat-icon">{{ ui.category_icon(c.slug) }}</span>
+        <span><strong>{{ c.name }}</strong>{% if c.name_hi %}<span class="hi" lang="hi">{{ c.name_hi }}</span>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 7. Popular products #}
+<div class="section-alt">{{ ui.rail("Popular products", "लोकप्रिय", popular, "/shop", csrf_token, "popular") }}</div>
+
+{# 8-13. Daily essentials, Spices & Masala, Pansari, Puja, Shringar, Gifts & Seasonal (admin-configurable) #}
+{% for r in rails %}
+{% if loop.index is even %}<div class="section-alt">{% endif %}
+{{ ui.rail(r.rail.title, r.rail.title_hi, r.products, r.more_url, csrf_token, r.rail.key) }}
+{% if loop.index is even %}</div>{% endif %}
+{% endfor %}
+
+{# 14. Why choose us #}
+{% if site.why_points %}
+<section class="section" aria-labelledby="h-why">
+  <div class="wrap">
+    <div class="section-head"><h2 id="h-why">Why shop with us</h2></div>
+    <ul class="why">
+      {% set why_icons = ["leaf", "scale", "truck", "cash", "store", "check"] %}
+      {% for point in site.why_points %}
+      <li>{{ ui.icon(why_icons[loop.index0 % 6]) }}<span>{{ point }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{# 15. Our story  /  16. Store information #}
+<section class="section section-alt" aria-labelledby="h-story">
+  <div class="wrap story">
+    <div>
+      <h2 id="h-story">{{ site.story_title }}</h2>
+      {% if site.story_paragraphs %}
+        <div class="prose">
+          {% for p in site.story_paragraphs[:2] %}<p>{{ p }}</p>{% endfor %}
+        </div>
+        {% if site.story_paragraphs|length > 2 %}<a href="/about">Read our story ›</a>{% endif %}
+      {% else %}
+        <p class="muted">{{ site.business_name }} is a pansari and general store{% if site.locality %} in {{ site.locality }}{% endif %}: spices, jadi-buti, puja samagri and daily needs under one roof.</p>
+      {% endif %}
+    </div>
+    <div class="signboard" aria-labelledby="h-store">
+      <h3 id="h-store">Visit the shop</h3>
+      <ul class="kv">
+        {% if site.full_address %}<li>{{ ui.icon("pin") }}<span>{{ site.full_address }}{% if site.map_url %}<br><a href="{{ site.map_url }}" rel="noopener" target="_blank">Open in Maps</a>{% endif %}</span></li>{% endif %}
+        {% if site.opening_hours %}<li>{{ ui.icon("clock") }}<span>{% for h in site.opening_hours %}{{ h }}{% if not loop.last %}<br>{% endif %}{% endfor %}</span></li>{% endif %}
+        {% if site.phone %}<li>{{ ui.icon("phone") }}<a href="tel:+91{{ site.phone[-10:] }}">{{ site.phone[-10:] }}</a></li>{% endif %}
+        {% if pickup %}<li>{{ ui.icon("store") }}<span>Store pickup available. Order online and collect from the counter.</span></li>{% endif %}
+      </ul>
+      <p class="small"><a href="/contact">Shop timings &amp; directions ›</a></p>
+    </div>
+  </div>
+</section>
+
+{# 17. Local delivery #}
+<section class="section" aria-labelledby="h-delivery">
+  <div class="wrap grid-2">
+    <div>
+      <h2 id="h-delivery">Local delivery{% if site.locality %} in {{ site.locality }}{% endif %}</h2>
+      {% if zones %}
+      <p class="muted">We deliver to these pincodes. Charges and timings depend on your area.</p>
+      <ul class="pins">
+        {% for z in zones|unique(attribute="pincode") %}<li>{{ z.pincode }}{% if z.area_name %} · {{ z.area_name }}{% endif %}</li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">Delivery areas are being set up.{% if pickup %} Store pickup is available.{% endif %}</p>
+      {% endif %}
+      <p><a href="/delivery">Delivery charges and timings ›</a></p>
+    </div>
+    <div class="signboard">
+      <h3>Check your pincode</h3>
+      {% include "partials/pincode_form.html" %}
+    </div>
+  </div>
+</section>
+
+{# 18. WhatsApp CTA #}
+{% if wa_contact %}
+<section class="section" aria-labelledby="h-wa">
+  <div class="wrap">
+    <div class="wa-cta">
+      <div>
+        <h2 id="h-wa">Prefer to order on WhatsApp?</h2>
+        <p class="muted">Send us your list. We will confirm prices, stock and delivery, just like ordering at the counter.</p>
+      </div>
+      <a class="btn btn-wa" href="{{ wa_contact }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} Chat on WhatsApp</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 19. Testimonials (shown only when the shop has added real ones) #}
+{% if testimonials %}
+<section class="section section-alt" aria-labelledby="h-quotes">
+  <div class="wrap">
+    <div class="section-head"><h2 id="h-quotes">What our customers say</h2></div>
+    <div class="quotes">
+      {% for t in testimonials %}
+      <figure class="quote">
+        {% if t.rating %}<div class="stars" aria-label="{{ t.rating }} out of 5">{{ "★" * t.rating }}{{ "☆" * (5 - t.rating) }}</div>{% endif %}
+        <blockquote><p>“{{ t.body }}”</p></blockquote>
+        <footer>— {{ t.name }}{% if t.place %}, {{ t.place }}{% endif %}</footer>
+      </figure>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

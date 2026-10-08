@@ -1,0 +1,18 @@
+{% extends "manage/layout_base.html" %}
+{% set area_title = site.business_name %}
+{% set area_tag = "Admin" %}
+{% set menu = [
+  ("/admin", "Dashboard"),
+  ("/admin/orders", "Orders"),
+  ("/admin/products", "Products"),
+  ("/admin/inventory", "Inventory"),
+  ("/admin/categories", "Categories"),
+  ("/admin/sellers", "Sellers"),
+  ("/admin/customers", "Customers"),
+  ("/admin/delivery", "Delivery"),
+  ("/admin/homepage", "Homepage"),
+  ("/admin/testimonials", "Testimonials"),
+  ("/admin/store-info", "Store information"),
+  ("/admin/settings", "Settings"),
+  ("/admin/activity", "Activity log"),
+] %}

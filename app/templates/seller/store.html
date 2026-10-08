@@ -1,0 +1,23 @@
+{% extends layout %}
+{% block content %}
+<h1>Store profile</h1>
+{% if errors %}<div class="alert alert-error" role="alert">Please fix the highlighted fields.</div>{% endif %}
+<form method="post" action="{{ action|default('/seller/store') }}" class="form-card" data-once>
+  {{ ui.csrf(csrf_token) }}
+  <div class="form-grid">
+    {{ ui.field("name", "Store name", store.name, errors=errors, required=True) }}
+    {{ ui.field("name_hi", "Store name in Hindi", store.name_hi, errors=errors) }}
+    <div class="full">{{ ui.textarea("description", "About the store", store.description, errors=errors, rows=3) }}</div>
+    {{ ui.field("phone", "Phone", store.phone, type="tel", errors=errors) }}
+    {{ ui.field("whatsapp", "WhatsApp number", store.whatsapp, type="tel", errors=errors) }}
+    <div class="full">{{ ui.field("address_line", "Address", store.address_line, errors=errors) }}</div>
+    {{ ui.field("area", "Area / locality", store.area, errors=errors) }}
+    {{ ui.field("city", "Town", store.city, errors=errors, required=True) }}
+    {{ ui.field("pincode", "Pincode", store.pincode, errors=errors, attrs='inputmode="numeric" maxlength="6"') }}
+    {{ ui.field("latitude", "Latitude", store.latitude if store.latitude is not none else "", errors=errors, hint="Optional. From Google Maps: long-press the shop, copy the numbers.") }}
+    {{ ui.field("longitude", "Longitude", store.longitude if store.longitude is not none else "", errors=errors) }}
+  </div>
+  <button class="btn" type="submit">Save store profile</button>
+  {% if scope.is_admin %}<a class="btn btn-quiet" href="/admin/delivery?store={{ store.id }}">Delivery settings</a>{% endif %}
+</form>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends layout %}
+{% block content %}
+<h1>Dashboard</h1>
+{% if stats.sellers_pending or stats.products_pending %}
+<div class="alert alert-info">
+  {% if stats.sellers_pending %}<a href="/admin/sellers?status=pending">{{ stats.sellers_pending }} seller{{ "s" if stats.sellers_pending != 1 }} waiting for approval</a>. {% endif %}
+  {% if stats.products_pending %}<a href="/admin/products?status=pending">{{ stats.products_pending }} product{{ "s" if stats.products_pending != 1 }} waiting for approval</a>.{% endif %}
+</div>
+{% endif %}
+{% include "manage/_dashboard_body.html" %}
+{% endblock %}

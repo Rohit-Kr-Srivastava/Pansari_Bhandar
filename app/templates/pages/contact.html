@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  {{ ui.breadcrumbs(meta.breadcrumbs) }}
+  <h1 class="listing-head">Contact &amp; shop address</h1>
+  <div class="grid-2">
+    <div class="signboard">
+      <h2>{{ site.business_name }}{% if site.business_name_hi %} <span class="hi" lang="hi">{{ site.business_name_hi }}</span>{% endif %}</h2>
+      <ul class="kv">
+        {% if site.full_address %}<li>{{ ui.icon("pin") }}<span>{{ site.full_address }}</span></li>{% endif %}
+        {% if site.opening_hours %}<li>{{ ui.icon("clock") }}<span>{% for h in site.opening_hours %}{{ h }}{% if not loop.last %}<br>{% endif %}{% endfor %}</span></li>{% endif %}
+        {% if site.phone %}<li>{{ ui.icon("phone") }}<a href="tel:+91{{ site.phone[-10:] }}">{{ site.phone[-10:] }}</a></li>{% endif %}
+        {% if site.email %}<li>{{ ui.icon("info") }}<a href="mailto:{{ site.email }}">{{ site.email }}</a></li>{% endif %}
+      </ul>
+      <div class="row section">
+        {% if site.map_url %}<a class="btn btn-quiet" href="{{ site.map_url }}" rel="noopener" target="_blank">{{ ui.icon("pin") }} Directions</a>{% endif %}
+        {% if wa_contact %}<a class="btn btn-wa" href="{{ wa_contact }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} WhatsApp</a>{% endif %}
+        {% if site.phone %}<a class="btn" href="tel:+91{{ site.phone[-10:] }}">{{ ui.icon("phone") }} Call</a>{% endif %}
+      </div>
+      {% if not (site.full_address or site.phone or wa_contact) %}<p class="muted">Contact details will appear here soon.</p>{% endif %}
+    </div>
+    <div class="panel">
+      <h2>Order help</h2>
+      <ul class="trust-list">
+        <li>{{ ui.icon("bag") }} Track your order from <a href="/account">My orders</a>.</li>
+        <li>{{ ui.icon("truck") }} See <a href="/delivery">delivery areas and charges</a>.</li>
+        <li>{{ ui.icon("cash") }} Pay by cash or UPI at delivery or pickup.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

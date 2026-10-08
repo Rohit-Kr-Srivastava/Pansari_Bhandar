@@ -1,0 +1,162 @@
+{# Reusable building blocks. Import with: {% import "components/ui.html" as ui %} #}
+
+{% set CATEGORY_ICONS = ["spices-masala", "grocery-ration", "whole-spices", "pansari-jadi-buti",
+  "puja-samagri", "shringar-ornaments", "gifts", "seasonal-festival", "household-daily-needs",
+  "other-products"] %}
+
+{% macro icon(name, cls="") -%}
+<svg class="i {{ cls }}" aria-hidden="true" focusable="false"><use href="#i-{{ name }}"></use></svg>
+{%- endmacro %}
+
+{% macro category_icon(slug, parent_slug=None) -%}
+{% set key = slug if slug in CATEGORY_ICONS else (parent_slug if parent_slug in CATEGORY_ICONS else "other-products") %}
+<svg class="i" aria-hidden="true" focusable="false"><use href="#c-{{ key }}"></use></svg>
+{%- endmacro %}
+
+{% macro placeholder(name) -%}
+<div class="ph" aria-hidden="true">{{ (name or "?")[:1] }}</div>
+{%- endmacro %}
+
+{% macro price(v) -%}
+{% if v %}
+<div class="price">
+  <strong>{{ v.effective|rupees }}</strong>
+  {% if v.sale_price is not none %}<s>{{ v.price|rupees }}</s><span class="off">{{ v.percent_off }}% off</span>{% endif %}
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro product_card(view, csrf_token) -%}
+{% set p = view.product %}
+{% set v = view.default %}
+<article class="card">
+  <a class="card-img" href="/p/{{ p.slug }}" tabindex="-1" aria-hidden="true">
+    {% if view.image %}
+    <img src="{{ view.image.path|media('sm') }}" alt="" loading="lazy" width="400" height="400">
+    {% else %}{{ placeholder(p.name) }}{% endif %}
+    {% if not view.in_stock %}<span class="tag tag-out">Out of stock</span>
+    {% elif v and v.percent_off >= 5 %}<span class="tag">{{ v.percent_off }}% off</span>{% endif %}
+  </a>
+  <div class="card-body">
+    <a class="card-title" href="/p/{{ p.slug }}">{{ p.name }}</a>
+    {% if p.name_hi %}<span class="hi" lang="hi">{{ p.name_hi }}</span>{% endif %}
+    {% if view.has_choices %}<span class="sizes">{{ view.variants|map(attribute="label")|join(" · ") }}</span>
+    {% elif v %}<span class="sizes">{{ v.label }}</span>{% endif %}
+    {% if view.has_choices %}
+    <div class="price"><strong><span class="faint small">from </span>{{ view.min_price|rupees }}</strong></div>
+    {% else %}{{ price(v) }}{% endif %}
+  </div>
+  <div class="card-actions">
+    {% if view.has_choices %}
+    <a class="btn btn-outline" href="/p/{{ p.slug }}">Choose size</a>
+    {% elif v and v.in_stock %}
+    <form action="/cart/add" method="post" hx-post="/cart/add" hx-swap="none">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="variant_id" value="{{ v.id }}">
+      <button class="btn" type="submit">Add <span class="sr-only">{{ p.name }} {{ v.label }} </span>to cart</button>
+    </form>
+    {% else %}
+    <a class="btn btn-quiet" href="/p/{{ p.slug }}">View</a>
+    {% endif %}
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro rail(title, title_hi, products, more_url, csrf_token, id=None) -%}
+{% if products %}
+<section class="section" {% if id %}id="{{ id }}"{% endif %} aria-labelledby="h-{{ id or title|lower|replace(' ', '-') }}">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="h-{{ id or title|lower|replace(' ', '-') }}">{{ title }}{% if title_hi %}<span class="hi" lang="hi">{{ title_hi }}</span>{% endif %}</h2>
+      {% if more_url %}<a href="{{ more_url }}">See all <span class="sr-only">{{ title }}</span>›</a>{% endif %}
+    </div>
+    <div class="rail">
+      {% for view in products %}{{ product_card(view, csrf_token) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{%- endmacro %}
+
+{% macro breadcrumbs(items) -%}
+{% if items %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol>
+    {% for name, url in items %}
+    <li>{% if loop.last %}<span aria-current="page">{{ name }}</span>{% else %}<a href="{{ url }}">{{ name }}</a>{% endif %}</li>
+    {% endfor %}
+  </ol>
+</nav>
+{% endif %}
+{%- endmacro %}
+
+{% macro pagination(page, pages, base_url, params, hx_target=None) -%}
+{% if pages > 1 %}
+<nav class="pagination" aria-label="Pages">
+  {% if page > 1 %}
+  <a href="{{ base_url }}{{ qs(params, page=page - 1) }}" rel="prev"
+     {% if hx_target %}hx-get="{{ base_url }}{{ qs(params, page=page - 1) }}" hx-target="#{{ hx_target }}" hx-push-url="true" hx-swap="outerHTML show:window:top"{% endif %}>‹ Prev</a>
+  {% endif %}
+  {% set lo = [page - 2, 1]|max %}{% set hi = [page + 2, pages]|min %}
+  {% if lo > 1 %}<a href="{{ base_url }}{{ qs(params, page=1) }}" {% if hx_target %}hx-get="{{ base_url }}{{ qs(params, page=1) }}" hx-target="#{{ hx_target }}" hx-push-url="true" hx-swap="outerHTML show:window:top"{% endif %}>1</a>{% if lo > 2 %}<span aria-hidden="true">…</span>{% endif %}{% endif %}
+  {% for n in range(lo, hi + 1) %}
+    {% if n == page %}<span aria-current="page">{{ n }}</span>
+    {% else %}<a href="{{ base_url }}{{ qs(params, page=n) }}" {% if hx_target %}hx-get="{{ base_url }}{{ qs(params, page=n) }}" hx-target="#{{ hx_target }}" hx-push-url="true" hx-swap="outerHTML show:window:top"{% endif %}>{{ n }}</a>{% endif %}
+  {% endfor %}
+  {% if hi < pages %}{% if hi < pages - 1 %}<span aria-hidden="true">…</span>{% endif %}<a href="{{ base_url }}{{ qs(params, page=pages) }}" {% if hx_target %}hx-get="{{ base_url }}{{ qs(params, page=pages) }}" hx-target="#{{ hx_target }}" hx-push-url="true" hx-swap="outerHTML show:window:top"{% endif %}>{{ pages }}</a>{% endif %}
+  {% if page < pages %}
+  <a href="{{ base_url }}{{ qs(params, page=page + 1) }}" rel="next"
+     {% if hx_target %}hx-get="{{ base_url }}{{ qs(params, page=page + 1) }}" hx-target="#{{ hx_target }}" hx-push-url="true" hx-swap="outerHTML show:window:top"{% endif %}>Next ›</a>
+  {% endif %}
+</nav>
+{% endif %}
+{%- endmacro %}
+
+{% macro field(name, label, value="", type="text", errors={}, hint="", required=False, attrs="", autocomplete="") -%}
+<div class="field">
+  <label for="f-{{ name }}">{{ label }}{% if not required %} <span class="faint small">(optional)</span>{% endif %}</label>
+  <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value if value is not none else '' }}"
+         {% if required %}required{% endif %} {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+         {% if errors.get(name) %}aria-invalid="true" aria-describedby="e-{{ name }}{% if hint %} h-{{ name }}{% endif %}"{% elif hint %}aria-describedby="h-{{ name }}"{% endif %} {{ attrs|safe }}>
+  {% if hint %}<div class="hint" id="h-{{ name }}">{{ hint }}</div>{% endif %}
+  {% if errors.get(name) %}<div class="error-text" id="e-{{ name }}">{{ errors[name] }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro textarea(name, label, value="", errors={}, hint="", required=False, rows=4) -%}
+<div class="field">
+  <label for="f-{{ name }}">{{ label }}{% if not required %} <span class="faint small">(optional)</span>{% endif %}</label>
+  <textarea id="f-{{ name }}" name="{{ name }}" rows="{{ rows }}" {% if required %}required{% endif %}
+    {% if errors.get(name) %}aria-invalid="true" aria-describedby="e-{{ name }}"{% endif %}>{{ value or '' }}</textarea>
+  {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+  {% if errors.get(name) %}<div class="error-text" id="e-{{ name }}">{{ errors[name] }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro checkbox(name, label, checked=False, hint="") -%}
+<div class="field">
+  <label class="check"><input type="checkbox" name="{{ name }}" value="1" {% if checked %}checked{% endif %}>
+  <span>{{ label }}{% if hint %}<span class="hint">{{ hint }}</span>{% endif %}</span></label>
+</div>
+{%- endmacro %}
+
+{% macro csrf(token) -%}<input type="hidden" name="csrf_token" value="{{ token }}">{%- endmacro %}
+
+{% macro status_pill(status, labels) -%}
+<span class="pill pill-{{ status }}">{{ (labels or {}).get(status) or (status|string|replace('_', ' ')|capitalize) }}</span>
+{%- endmacro %}
+
+{% macro empty(title, text="", action_url="", action_label="", icon_name="box") -%}
+<div class="empty">
+  {{ icon(icon_name) }}
+  <h2>{{ title }}</h2>
+  {% if text %}<p class="muted">{{ text }}</p>{% endif %}
+  {% if action_url %}<a class="btn" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro stock_text(v) -%}
+{% if v.stock <= 0 %}<span class="stock stock-out">{{ icon("close") }} Out of stock</span>
+{% elif v.stock <= 5 %}<span class="stock stock-low">{{ icon("info") }} Only {{ v.stock }} left</span>
+{% else %}<span class="stock stock-in">{{ icon("check") }} In stock</span>{% endif %}
+{%- endmacro %}

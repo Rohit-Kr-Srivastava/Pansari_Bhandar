@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  <h1 class="listing-head">Checkout</h1>
+  {% if r.errors.get("cart") %}<div class="alert alert-error" role="alert">{{ r.errors.cart }} <a href="/cart">Review cart</a></div>{% endif %}
+  <form class="checkout-layout" action="/checkout/review" method="post" novalidate>
+    {{ ui.csrf(csrf_token) }}
+    <div>
+      <section class="panel" aria-labelledby="h-contact">
+        <h2 id="h-contact"><span class="step">1</span> Your details</h2>
+        <div class="form-grid">
+          {{ ui.field("name", "Full name", f.name, errors=r.errors, required=True, autocomplete="name") }}
+          {{ ui.field("phone", "Mobile number", f.phone, type="tel", errors=r.errors, required=True, autocomplete="tel-national", hint="We call or WhatsApp this number about your order.", attrs='inputmode="numeric" maxlength="14"') }}
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-del">
+        <h2 id="h-del"><span class="step">2</span> Delivery</h2>
+        <fieldset>
+          <legend class="sr-only">How would you like to receive your order?</legend>
+          <label class="choice">
+            <input type="radio" name="method" value="delivery" {% if f.method != "pickup" %}checked{% endif %}
+                   hx-post="/checkout/quote" hx-trigger="change" hx-target="#delivery-block" hx-swap="outerHTML" hx-include="closest form">
+            <span><strong>Home delivery</strong><span class="small muted">To your address{% if site.locality %} in and around {{ site.locality }}{% endif %}</span></span>
+          </label>
+          {% if pickup_possible %}
+          <label class="choice">
+            <input type="radio" name="method" value="pickup" {% if f.method == "pickup" %}checked{% endif %}
+                   hx-post="/checkout/quote" hx-trigger="change" hx-target="#delivery-block" hx-swap="outerHTML" hx-include="closest form">
+            <span><strong>Store pickup</strong><span class="small muted">Collect from the shop. No delivery charge.</span></span>
+          </label>
+          {% endif %}
+          {% if r.errors.get("method") %}<div class="error-text">{{ r.errors.method }}</div>{% endif %}
+        </fieldset>
+
+        <div class="address-fields">
+          <div class="form-grid">
+            <div class="full">{{ ui.field("line1", "House no., street / mohalla", f.line1, errors=r.errors, required=True, autocomplete="address-line1") }}</div>
+            {{ ui.field("line2", "Area / colony", f.line2, errors=r.errors, autocomplete="address-line2") }}
+            {{ ui.field("landmark", "Landmark", f.landmark, errors=r.errors, hint="Near temple, school, chowk…") }}
+            {{ ui.field("city", "Town / village", f.city, errors=r.errors, required=True, autocomplete="address-level2") }}
+            <div class="field">
+              <label for="f-pincode">Pincode</label>
+              <input id="f-pincode" name="pincode" type="text" inputmode="numeric" maxlength="6" autocomplete="postal-code"
+                     value="{{ f.pincode }}" {% if r.errors.get("pincode") %}aria-invalid="true" aria-describedby="e-pincode"{% endif %}
+                     hx-post="/checkout/quote" hx-trigger="change, keyup changed delay:600ms" hx-target="#delivery-block" hx-swap="outerHTML" hx-include="closest form">
+              {% if r.errors.get("pincode") %}<div class="error-text" id="e-pincode">{{ r.errors.pincode }}</div>{% endif %}
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" name="save_address" value="1" {% if f.save_address %}checked{% endif %}> Save this address for next time</label>
+        </div>
+
+        {% include "partials/checkout_delivery.html" %}
+      </section>
+
+      <section class="panel" aria-labelledby="h-pay">
+        <h2 id="h-pay"><span class="step">3</span> Payment</h2>
+        <fieldset>
+          <legend class="sr-only">Payment method</legend>
+          {% for p in providers %}
+          <label class="choice">
+            <input type="radio" name="payment_method" value="{{ p.method.value }}" {% if f.payment_method == p.method.value or loop.length == 1 %}checked{% endif %}>
+            <span><strong>{{ p.label }}</strong><span class="small muted">{{ p.description }}</span></span>
+          </label>
+          {% endfor %}
+          {% if r.errors.get("payment_method") %}<div class="error-text">{{ r.errors.payment_method }}</div>{% endif %}
+        </fieldset>
+        {{ ui.textarea("note", "Note for the shop", f.note, rows=2, hint="For example: call before delivery, or a preferred brand.") }}
+      </section>
+    </div>
+
+    <aside>
+      {% include "partials/checkout_summary.html" %}
+      <div class="sticky-cta">
+        <button class="btn btn-block" type="submit">Review order {{ ui.icon("arrow") }}</button>
+      </div>
+      <p class="small faint">You can check everything before the order is placed.</p>
+    </aside>
+  </form>
+</div>
+{% endblock %}

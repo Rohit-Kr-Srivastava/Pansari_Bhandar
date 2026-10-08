@@ -1,0 +1,21 @@
+{% extends layout %}
+{% block content %}
+<h1>Activity log</h1>
+<p class="muted small">The latest 200 admin, seller and order actions.</p>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Item</th><th>Details</th></tr></thead>
+    <tbody>
+    {% for a, who in rows %}
+      <tr>
+        <td class="small nowrap">{{ a.created_at|ist("%d %b, %I:%M %p") if a.created_at else "" }}</td>
+        <td class="small">{{ who or "—" }}</td>
+        <td><code>{{ a.action }}</code></td>
+        <td class="small">{{ a.entity_type }} {{ a.entity_id or "" }}</td>
+        <td class="small">{% if a.before %}{{ a.before|tojson }} → {% endif %}{% if a.after %}{{ a.after|tojson }}{% endif %}{% if a.reason %}<br>{{ a.reason }}{% endif %}</td>
+      </tr>
+    {% else %}<tr><td colspan="5">No activity yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

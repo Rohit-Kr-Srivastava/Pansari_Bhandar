@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  {{ ui.breadcrumbs(meta.breadcrumbs) }}
+  <div class="listing-head">
+    <h1>{{ heading }}{% if category and category.name_hi %} <span class="hi" lang="hi">{{ category.name_hi }}</span>{% endif %}</h1>
+    {% if category and category.description %}<p class="muted prose">{{ category.description }}</p>{% endif %}
+    {% if category and category.children %}
+    <nav class="subcats" aria-label="Subcategories">
+      {% for ch in category.children if ch.is_active %}<a class="chip" href="/c/{{ ch.slug }}">{{ ch.name }}</a>{% endfor %}
+    </nav>
+    {% elif category and category.parent %}
+    <nav class="subcats" aria-label="Related">
+      <a class="chip" href="/c/{{ category.parent.slug }}">All {{ category.parent.name }}</a>
+    </nav>
+    {% endif %}
+  </div>
+
+  <div class="listing">
+    <form id="filters" action="{{ base_url }}" method="get"
+          hx-get="{{ base_url }}" hx-target="#results" hx-swap="outerHTML" hx-push-url="true"
+          hx-trigger="change, submit" hx-sync="this:replace">
+      {% if search %}<input type="hidden" name="q" value="{{ params.q }}">{% endif %}
+      <details class="filters" {% if params.min or params.max or params.in_stock %}open{% endif %}>
+        <summary>{{ ui.icon("filter") }} Filters</summary>
+        <div class="filter-row">
+          <div class="field">
+            <label for="f-min">Min price (₹)</label>
+            <input id="f-min" name="min" type="number" min="0" step="1" inputmode="numeric" value="{{ params.min }}">
+          </div>
+          <div class="field">
+            <label for="f-max">Max price (₹)</label>
+            <input id="f-max" name="max" type="number" min="0" step="1" inputmode="numeric" value="{{ params.max }}">
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" name="in_stock" value="1" {% if params.in_stock %}checked{% endif %}> In stock only</label>
+        <div class="row">
+          <button class="btn btn-sm" type="submit">Apply</button>
+          <a class="btn btn-sm btn-quiet" href="{{ base_url }}{% if search and params.q %}?q={{ params.q|urlencode }}{% endif %}">Clear</a>
+        </div>
+      </details>
+      <div class="field">
+        <label for="f-sort">Sort by</label>
+        <select id="f-sort" name="sort">
+          {% for value, label in sort_labels.items() %}
+          {% set v = "" if value.value == "relevance" else value.value %}
+          <option value="{{ v }}" {% if (params.sort or "") == v %}selected{% endif %}>{{ ("Best match" if search else "Featured") if not v else label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <noscript><button class="btn btn-sm" type="submit">Update</button></noscript>
+    </form>
+
+    {% include "partials/results.html" %}
+  </div>
+</div>
+{% endblock %}

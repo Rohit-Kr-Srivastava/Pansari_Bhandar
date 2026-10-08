@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap auth">
+  <div class="panel">
+    <h1>Sign in</h1>
+    <p class="muted">Use your mobile number (or email) and password.</p>
+    {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+    <form action="/login" method="post" data-once>
+      {{ ui.csrf(csrf_token) }}
+      <input type="hidden" name="next" value="{{ next }}">
+      {{ ui.field("login", "Mobile number or email", login or "", required=True, autocomplete="username", attrs='autocapitalize="none" spellcheck="false"') }}
+      {{ ui.field("password", "Password", "", type="password", required=True, autocomplete="current-password") }}
+      <button class="btn btn-block" type="submit" data-busy="Signing in…">Sign in</button>
+    </form>
+    <hr class="rule">
+    <p>New here? <a href="/register{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a> in a minute.</p>
+    <p class="small muted">Forgot your password? Message us on WhatsApp{% if site.phone %} or call {{ site.phone[-10:] }}{% endif %} and we will help you reset it.</p>
+  </div>
+</div>
+{% endblock %}

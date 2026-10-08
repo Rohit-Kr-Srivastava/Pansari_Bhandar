@@ -1,0 +1,40 @@
+{% extends layout %}
+{% block content %}
+<h1>Orders</h1>
+<nav class="subcats" aria-label="Order status">
+  <a class="chip" href="{{ base }}/orders?status=open" {% if status == "open" %}aria-current="page"{% endif %}>Open</a>
+  {% for s in statuses %}<a class="chip" href="{{ base }}/orders?status={{ s.value }}" {% if status == s.value %}aria-current="page"{% endif %}>{{ labels[s] }}</a>{% endfor %}
+  <a class="chip" href="{{ base }}/orders?status=all" {% if status == "all" %}aria-current="page"{% endif %}>All</a>
+</nav>
+<form class="row" method="get" action="{{ base }}/orders">
+  <input type="hidden" name="status" value="{{ status }}">
+  <label class="sr-only" for="oq">Order number or phone</label>
+  <input id="oq" name="q" type="search" value="{{ q }}" placeholder="Order no. or customer phone">
+  <button class="btn btn-sm btn-quiet" type="submit">Search</button>
+</form>
+<div class="section">
+{% if orders %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Order</th><th>Placed</th><th>Customer</th><th>Type</th><th>Status</th><th class="num">Total</th></tr></thead>
+    <tbody>
+    {% for o in orders %}
+      {% set a = o.delivery_address or {} %}
+      <tr>
+        <td><a href="{{ base }}/orders/{{ o.order_no }}"><strong>{{ o.order_no }}</strong></a></td>
+        <td class="nowrap small">{{ o.placed_at|ist("%d %b, %I:%M %p") }}</td>
+        <td class="small">{{ a.get("name", "") }}<br>{{ a.get("phone", "") }}</td>
+        <td class="small">{% if o.deliveries and o.deliveries[0].method.value == "pickup" %}Pickup{% else %}Delivery {{ a.get("pincode", "") }}{% endif %}{% if o.deliveries and o.deliveries[0].slot_label %}<br>{{ o.deliveries[0].slot_label }}{% endif %}</td>
+        <td>{{ ui.status_pill(o.status, labels) }}</td>
+        <td class="num">{{ o.total_paise|rupees }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ ui.pagination(page, pages, base ~ "/orders", {"status": status, "q": q}) }}
+{% else %}
+{{ ui.empty("No orders here", "New orders will appear here as soon as customers place them.", "", "", "bag") }}
+{% endif %}
+</div>
+{% endblock %}

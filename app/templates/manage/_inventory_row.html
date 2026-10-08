@@ -1,0 +1,25 @@
+{% import "components/ui.html" as ui %}
+{% set inv = v.inventory %}
+{% set qty = inv.quantity if inv else 0 %}
+{% set threshold = inv.low_stock_threshold if inv else 0 %}
+<tr id="inv-{{ v.id }}">
+  <td><a href="{{ base }}/products/{{ v.product_id }}/edit">{{ v.product.name }}</a>{% if not v.is_active %} <span class="pill">hidden</span>{% endif %}</td>
+  <td>{{ v.label }}</td>
+  <td class="small">{{ v.sku }}</td>
+  {% if scope.is_admin %}<td class="small">{{ v.product.store.name }}</td>{% endif %}
+  <td class="num"><span class="{{ 'out' if qty <= 0 else ('low' if qty <= threshold else '') }}">{{ qty }}</span></td>
+  <td>
+    <form class="inline-form" method="post" action="{{ base }}/inventory/{{ v.id }}"
+          hx-post="{{ base }}/inventory/{{ v.id }}" hx-target="#inv-{{ v.id }}" hx-swap="outerHTML">
+      {{ ui.csrf(csrf_token) }}
+      <button class="sr-only" type="submit" tabindex="-1" aria-hidden="true">Save</button>
+      <button class="btn btn-sm btn-quiet" type="submit" name="adjust" value="-1" aria-label="Reduce stock of {{ v.product.name }} {{ v.label }} by 1">−</button>
+      <label class="sr-only" for="sq-{{ v.id }}">New stock for {{ v.product.name }} {{ v.label }}</label>
+      <input id="sq-{{ v.id }}" class="stock-input" name="quantity" type="number" min="0" step="1" value="{{ qty }}" inputmode="numeric">
+      <button class="btn btn-sm btn-quiet" type="submit" name="adjust" value="+1" aria-label="Add 1 to stock of {{ v.product.name }} {{ v.label }}">+</button>
+      <label class="sr-only" for="st-{{ v.id }}">Low-stock alert</label>
+      <input id="st-{{ v.id }}" class="stock-input" name="threshold" type="number" min="0" step="1" value="{{ threshold }}" title="Alert me when stock falls to this number">
+      <button class="btn btn-sm" type="submit">Save</button>
+    </form>
+  </td>
+</tr>

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% set INFO_LABELS = {
+  "net_quantity": "Net quantity", "mrp_note": "MRP", "ingredients": "Ingredients",
+  "veg_mark": "Veg / non-veg", "allergens": "Allergen information", "fssai_license": "FSSAI licence no.",
+  "manufacturer": "Manufactured / packed by", "country_of_origin": "Country of origin",
+  "best_before": "Best before", "storage": "Storage", "other": "Other information"} %}
+{% block content %}
+<div class="wrap">
+  {{ ui.breadcrumbs(meta.breadcrumbs) }}
+  <div class="pdp">
+    <div class="gallery">
+      <div class="gallery-main">
+        {% if view.image %}
+        <img id="gallery-main-img" src="{{ view.image.path|media }}" alt="{{ view.image.alt_text or product.name }}" width="1200" height="1200" fetchpriority="high">
+        {% else %}{{ ui.placeholder(product.name) }}{% endif %}
+      </div>
+      {% if view.images|length > 1 %}
+      <div class="thumbs" role="group" aria-label="Product photos">
+        {% for img in view.images %}
+        <button type="button" data-gallery-src="{{ img.path|media }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" aria-label="Photo {{ loop.index }}">
+          <img src="{{ img.path|media('sm') }}" alt="" loading="lazy" width="64" height="64">
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div>
+      <h1>{{ product.name }}</h1>
+      {% if product.name_hi %}<div class="hi" lang="hi">{{ product.name_hi }}</div>{% endif %}
+      <p class="meta-line">
+        {% if product.brand %}Brand: {{ product.brand }}{% elif product.brand_type.value == "local" %}Local product{% elif product.brand_type.value == "no_brand" %}Loose / unbranded{% endif %}
+        · <a href="/c/{{ product.category.slug }}">{{ product.category.name }}</a>
+      </p>
+      {% if product.short_description %}<p>{{ product.short_description }}</p>{% endif %}
+
+      {% include "partials/buybox.html" %}
+
+      <ul class="trust-list">
+        <li>{{ ui.icon("cash") }} Cash on delivery. Pay when you receive.</li>
+        <li>{{ ui.icon("store") }} Sold by {{ product.store.name }}{% if product.store.city %}, {{ product.store.city }}{% endif %}</li>
+      </ul>
+    </div>
+  </div>
+
+  {% if product.description or product.product_info %}
+  <div class="grid-2">
+    {% if product.description %}
+    <section aria-labelledby="h-desc">
+      <h2 id="h-desc">About this product</h2>
+      <div class="prose">{{ product.description|nl2p }}</div>
+    </section>
+    {% endif %}
+    {% if product.product_info %}
+    <section aria-labelledby="h-info">
+      <h2 id="h-info">Product information</h2>
+      <table class="info-table">
+        {% for key, label in INFO_LABELS.items() if product.product_info.get(key) %}
+        <tr><th scope="row">{{ label }}</th><td>{{ product.product_info[key] }}</td></tr>
+        {% endfor %}
+      </table>
+      <p class="small faint">Details as provided by the seller from the product pack.</p>
+    </section>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if related %}
+<div class="section-alt">{{ ui.rail("You may also need", "", related, "/c/" ~ product.category.slug, csrf_token, "related") }}</div>
+{% endif %}
+{% endblock %}

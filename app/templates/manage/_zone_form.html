@@ -1,0 +1,23 @@
+{% set zid = zone.id if zone else "new" %}
+<form method="post" action="{{ action }}" class="section">
+  {{ ui.csrf(csrf_token) }}
+  <div class="form-grid">
+    <div class="field"><label for="zp-{{ zid }}">Pincode</label>
+      <input id="zp-{{ zid }}" name="pincode" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" required value="{{ zone.pincode if zone else '' }}"></div>
+    <div class="field"><label for="za-{{ zid }}">Area name <span class="faint small">(optional)</span></label>
+      <input id="za-{{ zid }}" name="area_name" maxlength="120" value="{{ (zone.area_name or '') if zone else '' }}"></div>
+    <div class="field"><label for="zf-{{ zid }}">Delivery fee ₹</label>
+      <input id="zf-{{ zid }}" name="fee" inputmode="decimal" value="{{ rupees_plain(zone.delivery_fee_paise) if zone else '' }}" placeholder="0"></div>
+    <div class="field"><label for="zfa-{{ zid }}">Free delivery above ₹ <span class="faint small">(optional)</span></label>
+      <input id="zfa-{{ zid }}" name="free_above" inputmode="decimal" value="{{ rupees_plain(zone.free_delivery_above_paise) if zone else '' }}"></div>
+    <div class="field"><label for="zm-{{ zid }}">Minimum order ₹ <span class="faint small">(optional)</span></label>
+      <input id="zm-{{ zid }}" name="min_order" inputmode="decimal" value="{{ rupees_plain(zone.min_order_paise) if zone and zone.min_order_paise else '' }}"></div>
+    <div class="field"><label for="zd-{{ zid }}">Delivery in (days)</label>
+      <input id="zd-{{ zid }}" name="estimated_days" type="number" min="0" max="30" value="{{ zone.estimated_days if zone else 1 }}"></div>
+    <div class="field"><label class="check"><input type="checkbox" name="same_day_available" value="1" {% if zone and zone.same_day_available %}checked{% endif %}> Same-day delivery</label></div>
+    <div class="field"><label for="zc-{{ zid }}">Same-day order cut-off</label>
+      <input id="zc-{{ zid }}" name="same_day_cutoff" type="time" value="{{ zone.same_day_cutoff.strftime('%H:%M') if zone and zone.same_day_cutoff else '' }}"></div>
+    <div class="field"><label class="check"><input type="checkbox" name="is_active" value="1" {% if not zone or zone.is_active %}checked{% endif %}> Active</label></div>
+  </div>
+  <button class="btn btn-sm" type="submit">{{ "Save" if zone else "Add pincode" }}</button>
+</form>

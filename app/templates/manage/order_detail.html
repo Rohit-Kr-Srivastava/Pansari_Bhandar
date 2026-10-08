@@ -1,0 +1,85 @@
+{% extends layout %}
+{% block content %}
+{% set a = order.delivery_address or {} %}
+{% set d = order.deliveries[0] if order.deliveries else None %}
+<nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="{{ base }}/orders">Orders</a></li><li><span aria-current="page">{{ order.order_no }}</span></li></ol></nav>
+<div class="row-between">
+  <h1>Order {{ order.order_no }}</h1>
+  {{ ui.status_pill(order.status, labels) }}
+</div>
+<p class="muted small">Placed {{ order.placed_at|ist("%d %b %Y, %I:%M %p") }} · {{ "Store pickup" if is_pickup else "Home delivery" }}{% if d and d.is_same_day %} · same day{% endif %}</p>
+
+<div class="checkout-layout">
+  <div>
+    <section class="form-card">
+      <h2>Items{% if scope.store_id and items|length != order.items|length %} <span class="small faint">(your shop's items only)</span>{% endif %}</h2>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Item</th><th>SKU</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr></thead>
+          <tbody>
+            {% for i in items %}
+            <tr><td>{{ i.product_name }} · {{ i.variant_label }}</td><td class="small">{{ i.sku or "" }}</td><td class="num"><strong>{{ i.quantity }}</strong></td><td class="num">{{ i.unit_price_paise|rupees }}</td><td class="num">{{ i.line_total_paise|rupees }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if scope.store_id and items|length != order.items|length %}
+      {% set mine = items|sum(attribute="line_total_paise") %}
+      {% set my_delivery = order.deliveries|selectattr("store_id", "equalto", scope.store_id)|list %}
+      <div class="summary section">
+        <div class="sum-row"><span>Your items</span><span>{{ mine|rupees }}</span></div>
+        {% if my_delivery %}<div class="sum-row"><span>Your delivery charge</span><span>{{ my_delivery[0].fee_paise|rupees }}</span></div>{% endif %}
+        <p class="small muted">Order-level totals and payment are handled by the admin.</p>
+      </div>
+      {% else %}
+      <div class="summary section">
+        <div class="sum-row"><span>Subtotal</span><span>{{ order.subtotal_paise|rupees }}</span></div>
+        {% if order.discount_paise %}<div class="sum-row"><span>Discount</span><span>−{{ order.discount_paise|rupees }}</span></div>{% endif %}
+        <div class="sum-row"><span>Delivery</span><span>{{ order.delivery_fee_paise|rupees }}</span></div>
+        <div class="sum-row total"><span>Collect (COD)</span><span>{{ order.total_paise|rupees }}</span></div>
+        {% for p in order.payments %}<p class="small muted">Payment: {{ p.method.value|upper }} · {{ p.status.value }}</p>{% endfor %}
+      </div>
+      {% endif %}
+    </section>
+    {% if order.customer_note %}<section class="form-card"><h2>Customer note</h2><p>{{ order.customer_note }}</p></section>{% endif %}
+  </div>
+
+  <aside>
+    <section class="form-card">
+      <h2>Customer</h2>
+      <p><strong>{{ a.get("name") or (customer.full_name if customer else "") }}</strong><br>
+        {% set phone = a.get("phone") or (customer.phone if customer else "") %}
+        {% if phone %}<a href="tel:+91{{ phone[-10:] }}">{{ phone }}</a>{% endif %}</p>
+      {% if a.get("line1") %}
+      <p>{{ a.line1 }}{% if a.get("line2") %}, {{ a.line2 }}{% endif %}{% if a.get("landmark") %}<br>Landmark: {{ a.landmark }}{% endif %}<br>{{ a.get("city", "") }} {{ a.get("pincode", "") }}</p>
+      {% endif %}
+      {% if d %}<p class="small">{% if d.scheduled_date %}Deliver on {{ d.scheduled_date.strftime("%a, %d %b") }}{% endif %}{% if d.slot_label %}, {{ d.slot_label }}{% endif %}</p>{% endif %}
+      {% if wa_customer %}<a class="btn btn-wa btn-sm btn-block" href="{{ wa_customer }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} WhatsApp customer</a>{% endif %}
+    </section>
+
+    <section class="form-card">
+      <h2>Update status</h2>
+      {% if not can_manage %}
+        <p class="small muted">This order has items from more than one shop. The admin updates its status.</p>
+      {% elif next_statuses %}
+      <form method="post" action="{{ base }}/orders/{{ order.order_no }}/status" data-once>
+        {{ ui.csrf(csrf_token) }}
+        <fieldset>
+          <legend class="sr-only">New status</legend>
+          {% for s in next_statuses %}
+          <label class="choice"><input type="radio" name="status" value="{{ s.value }}" {% if loop.first %}checked{% endif %}><span>{{ labels[s] }}</span></label>
+          {% endfor %}
+        </fieldset>
+        <label for="reason" class="small">Note (needed for cancel / return)</label>
+        <input id="reason" name="reason" maxlength="300">
+        <button class="btn btn-block section" type="submit">Update status</button>
+      </form>
+      <p class="small faint">Cancelling or marking returned puts the items back in stock.</p>
+      {% else %}
+        <p class="small muted">This order is closed.</p>
+      {% endif %}
+      {% if order.cancel_reason %}<p class="small">Reason: {{ order.cancel_reason }}</p>{% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

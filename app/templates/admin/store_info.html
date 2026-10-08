@@ -1,0 +1,42 @@
+{% extends layout %}
+{% block content %}
+<h1>Store information</h1>
+<p class="muted small">Shown on the homepage, contact page, footer and in Google search results. Leave anything empty that you do not want to show.</p>
+<form method="post" action="/admin/store-info" data-once>
+  {{ ui.csrf(csrf_token) }}
+  <section class="form-card">
+    <h2>Name and contact</h2>
+    <div class="form-grid">
+      {{ ui.field("business_name", "Business name", cfg.business_name, required=True) }}
+      {{ ui.field("business_name_hi", "Name in Hindi", cfg.business_name_hi) }}
+      <div class="full">{{ ui.field("tagline", "Tagline", cfg.tagline) }}</div>
+      {{ ui.field("phone", "Phone", cfg.phone, type="tel") }}
+      {{ ui.field("whatsapp_number", "WhatsApp number", cfg.whatsapp_number, type="tel", hint="With country code, e.g. 91XXXXXXXXXX. Used for every WhatsApp button.") }}
+      {{ ui.field("email", "Email", cfg.email, type="email") }}
+    </div>
+  </section>
+  <section class="form-card">
+    <h2>Address and timings</h2>
+    <div class="form-grid">
+      <div class="full">{{ ui.field("address_line", "Shop address", cfg.address_line, hint="e.g. Main Road, near the bus stand") }}</div>
+      {{ ui.field("locality", "Town", cfg.locality) }}
+      {{ ui.field("district", "District", cfg.district) }}
+      {{ ui.field("state", "State", cfg.state) }}
+      {{ ui.field("pincode", "Pincode", cfg.pincode, attrs='inputmode="numeric" maxlength="6"') }}
+      <div class="full">{{ ui.field("map_url", "Google Maps link", cfg.map_url, type="url", hint="Share > Copy link from Google Maps (starts with https://).") }}</div>
+      {{ ui.field("latitude", "Latitude", cfg.latitude) }}
+      {{ ui.field("longitude", "Longitude", cfg.longitude) }}
+      <div class="full">{{ ui.textarea("opening_hours", "Opening hours (one per line)", cfg.opening_hours|join("\n"), rows=3, hint="e.g. Mon-Sat 8:00 am - 9:00 pm. For Google, you may also write Mo-Sa 08:00-21:00.") }}</div>
+    </div>
+  </section>
+  <section class="form-card">
+    <h2>Our story</h2>
+    <div class="form-grid">
+      {{ ui.field("story_title", "Heading", cfg.story_title) }}
+      {{ ui.field("established_year", "Established in (year)", cfg.established_year, attrs='inputmode="numeric" maxlength="4"') }}
+      <div class="full">{{ ui.textarea("story", "Story (leave a blank line between paragraphs)", cfg.story, rows=8, hint="Who runs the shop, since when, what you are known for. Real details build trust.") }}</div>
+    </div>
+  </section>
+  <div class="actions-bar"><button class="btn" type="submit" data-busy="Saving…">Save</button></div>
+</form>
+{% endblock %}

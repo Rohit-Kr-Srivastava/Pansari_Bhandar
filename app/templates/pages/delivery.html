@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  {{ ui.breadcrumbs(meta.breadcrumbs) }}
+  <h1 class="listing-head">Home delivery{% if site.locality %} in {{ site.locality }}{% endif %}</h1>
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-check">
+      <h2 id="h-check">Check your pincode</h2>
+      {% with pincode=request.query_params.get("pincode", "")[:6] %}{% include "partials/pincode_form.html" %}{% endwith %}
+    </section>
+    <section class="panel" aria-labelledby="h-pickup">
+      <h2 id="h-pickup">Store pickup</h2>
+      {% set pickup_stores = stores|selectattr("pickup_available")|list %}
+      {% if pickup_stores %}
+        {% for s in pickup_stores %}<p><strong>{{ s.name }}</strong>{% if s.pickup_instructions %}<br>{{ s.pickup_instructions }}{% endif %}</p>{% endfor %}
+      {% else %}<p class="muted">Store pickup is not offered at the moment.</p>{% endif %}
+    </section>
+  </div>
+  <section class="section" aria-labelledby="h-areas">
+    <h2 id="h-areas">Areas we deliver to</h2>
+    {% if zones %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Pincode</th><th>Area</th><th class="num">Charge</th><th class="num">Free above</th><th class="num">Minimum order</th><th>Timing</th></tr></thead>
+        <tbody>
+          {% for z in zones %}
+          <tr>
+            <td>{{ z.pincode }}</td>
+            <td>{{ z.area_name or "" }}{% if stores|length > 1 %}<br><span class="small faint">{{ z.store.name }}</span>{% endif %}</td>
+            <td class="num">{{ z.delivery_fee_paise|rupees if z.delivery_fee_paise else "Free" }}</td>
+            <td class="num">{{ z.free_delivery_above_paise|rupees if z.free_delivery_above_paise else "—" }}</td>
+            <td class="num">{{ z.min_order_paise|rupees if z.min_order_paise else "—" }}</td>
+            <td>{% if z.same_day_available %}Same day{% if z.same_day_cutoff %} if ordered by {{ z.same_day_cutoff.strftime("%I:%M %p").lstrip("0") }}{% endif %}{% else %}{{ "Next day" if z.estimated_days <= 1 else z.estimated_days ~ " days" }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% for s in stores if s.delivery_radius_km %}<p class="small muted">{{ s.name }} delivers within about {{ s.delivery_radius_km|float|round(1) }} km of the shop.</p>{% endfor %}
+    {% else %}
+    <p class="muted">Delivery areas are being set up. Please contact the shop.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

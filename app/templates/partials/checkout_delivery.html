@@ -1,0 +1,39 @@
+{% import "components/ui.html" as ui %}
+<div id="delivery-block" aria-live="polite">
+  {% set q = r.quote %}
+  {% if f.method == "pickup" %}
+    {% if q.available %}
+      <div class="alert alert-success">{{ ui.icon("store") }} Pickup from the shop. We will message you when your order is packed.</div>
+    {% else %}
+      <div class="alert alert-error">{{ q.problems|join(" ") or "Store pickup is not available." }}</div>
+    {% endif %}
+  {% elif not f.pincode %}
+    <p class="small muted">{{ ui.icon("info") }} Enter your pincode to see delivery charges and timing.</p>
+  {% elif f.pincode|length < 6 %}
+    <p class="small muted">Enter all 6 digits of your pincode.</p>
+  {% elif r.errors.get("pincode") %}
+    <p class="error-text">{{ r.errors.pincode }}</p>
+  {% elif not q.available %}
+    <div class="alert alert-error" role="alert">{{ q.problems|join(" ") }}</div>
+  {% else %}
+    <div class="alert alert-success">
+      {{ ui.icon("truck") }} Delivery available{% if q.stores[0].area_name %} to {{ q.stores[0].area_name }}{% endif %}.
+      Estimated <strong>{{ q.eta_text }}</strong>.
+      Charge: <strong>{{ q.fee|rupees if q.fee else "Free" }}</strong>
+      {% for s in q.stores %}{% if s.fee and s.free_above %}<br><span class="small">Free delivery on orders above {{ s.free_above|rupees }}.</span>{% endif %}{% endfor %}
+    </div>
+    {% if q.slots %}
+    <fieldset>
+      <legend>Choose a delivery time</legend>
+      <div class="slot-grid">
+        {% for s in q.slots %}
+        <label class="choice"><input type="radio" name="slot" value="{{ s.value }}" {% if f.slot == s.value or (not f.slot and loop.first) %}checked{% endif %}><span>{{ s.label }}</span></label>
+        {% endfor %}
+      </div>
+      {% if r.errors.get("slot") %}<div class="error-text">{{ r.errors.slot }}</div>{% endif %}
+    </fieldset>
+    {% endif %}
+  {% endif %}
+  {% if r.errors.get("delivery") and f.method != "pickup" and q.available %}<div class="error-text">{{ r.errors.delivery }}</div>{% endif %}
+</div>
+{% if hx %}{% with oob=True %}{% include "partials/checkout_summary.html" %}{% endwith %}{% endif %}

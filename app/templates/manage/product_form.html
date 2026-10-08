@@ -1,0 +1,123 @@
+{% extends layout %}
+{% block content %}
+{% set editing = product is not none %}
+<div class="row-between">
+  <h1>{% if editing %}Edit {{ product.name }}{% elif form.clone_from %}New product (copied){% else %}Add product{% endif %}</h1>
+  {% if editing %}
+  <div class="row">
+    {{ ui.status_pill(product.status, None) }}
+    <a class="btn btn-sm btn-quiet" href="{{ base }}/products/{{ product.id }}/clone">Clone</a>
+    {% if product.status.value == "approved" %}<a class="btn btn-sm btn-quiet" href="/p/{{ product.slug }}" target="_blank" rel="noopener">View in shop</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% if form.clone_from %}<div class="alert alert-info">Copied from an existing product. Change the size, price, SKU and stock, then save. Photos are copied too.</div>{% endif %}
+{% if editing and product.status.value == "rejected" and product.rejection_reason %}<div class="alert alert-error">Rejected by admin: {{ product.rejection_reason }}. Fix and submit again.</div>{% endif %}
+{% if errors %}<div class="alert alert-error" role="alert">Please fix the highlighted fields.{% for k, msg in errors.items() if k.startswith("v") or k in ("images", "variants", "store_id") %}<br>{{ msg }}{% endfor %}</div>{% endif %}
+
+<form method="post" enctype="multipart/form-data" data-once
+      action="{{ base }}/products/{{ product.id ~ '/edit' if editing else 'new' }}">
+  {{ ui.csrf(csrf_token) }}
+  <input type="hidden" name="clone_from" value="{{ form.clone_from }}">
+
+  <section class="form-card">
+    <h2>1. Basic details</h2>
+    <div class="form-grid">
+      <div class="full">{{ ui.field("name", "Product name", form.name, errors=errors, required=True, hint="Include the size if you sell sizes as separate products, e.g. Turmeric Powder 100g.") }}</div>
+      {{ ui.field("name_hi", "Name in Hindi", form.name_hi, errors=errors, hint="e.g. हल्दी पाउडर") }}
+      <div class="field">
+        <label for="f-category_id">Category</label>
+        <select id="f-category_id" name="category_id" required {% if errors.category_id %}aria-invalid="true"{% endif %}>
+          <option value="">Choose…</option>
+          {% for c in categories %}<option value="{{ c.id }}" {% if form.category_id == c.id|string %}selected{% endif %}>{% if c.parent %}{{ c.parent.name }} › {% endif %}{{ c.name }}</option>{% endfor %}
+        </select>
+        {% if errors.category_id %}<div class="error-text">{{ errors.category_id }}</div>{% endif %}
+      </div>
+      {% if scope.is_admin %}
+      <div class="field">
+        <label for="f-store_id">Store</label>
+        <select id="f-store_id" name="store_id" required>
+          {% for s in stores %}<option value="{{ s.id }}" {% if form.store_id == s.id|string or (not form.store_id and loop.first) %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {{ ui.field("brand", "Brand", form.brand, errors=errors, hint="Leave empty for loose or unbranded items.") }}
+      <div class="field">
+        <label for="f-brand_type">If no brand</label>
+        <select id="f-brand_type" name="brand_type">
+          {% for value, label in [("no_brand", "Loose / no brand"), ("local", "Local product"), ("generic", "Generic"), ("branded", "Branded")] %}
+          <option value="{{ value }}" {% if form.brand_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="full">{{ ui.field("short_description", "One-line description", form.short_description, errors=errors, hint="Shown under the name, e.g. Freshly ground, bright colour.") }}</div>
+      <div class="full">{{ ui.textarea("description", "Full description", form.description, errors=errors, rows=4) }}</div>
+      <div class="full">{{ ui.field("search_keywords", "Other names customers search for", form.search_keywords, errors=errors, hint="e.g. haldi turmeric हल्दी") }}</div>
+    </div>
+    <div class="row">
+      {% if scope.is_admin %}{{ ui.checkbox("is_featured", "Featured on homepage", form.is_featured) }}{% endif %}
+      {{ ui.checkbox("is_seasonal", "Seasonal / festival item", form.is_seasonal) }}
+    </div>
+  </section>
+
+  <section class="form-card" aria-labelledby="h-sizes">
+    <h2 id="h-sizes">2. Sizes, price and stock</h2>
+    <p class="small muted">Add one row per size you sell. Tap a quick size to fill it in.</p>
+    {% if errors.variants %}<div class="error-text">{{ errors.variants }}</div>{% endif %}
+    <div id="variants">
+      {% for row in form.variants %}{% with i=loop.index0 %}{% include "manage/_variant_row.html" %}{% endwith %}{% endfor %}
+    </div>
+    <template id="variant-tpl">{% with row=empty_row, i="__I__" %}{% include "manage/_variant_row.html" %}{% endwith %}</template>
+    <button type="button" class="btn btn-sm btn-quiet" data-add-variant="variants">+ Add another size</button>
+  </section>
+
+  <section class="form-card" aria-labelledby="h-photos">
+    <h2 id="h-photos">3. Photos</h2>
+    {% if editing and product.images %}
+    <div class="img-list">
+      {% for img in product.images %}
+      <div class="img-item">
+        <img src="{{ img.path|media('sm') }}" alt="">
+        <label class="check"><input type="radio" name="primary_image" value="{{ img.id }}" {% if img.is_primary %}checked{% endif %}> Main<span class="sr-only"> photo {{ loop.index }}</span></label>
+        <label class="check"><input type="checkbox" name="remove_image" value="{{ img.id }}"> Remove<span class="sr-only"> photo {{ loop.index }}</span></label>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="field">
+      <label for="f-images">Add photos <span class="faint small">(JPG, PNG or WebP, up to {{ request.app.state.settings.max_upload_mb }} MB each)</span></label>
+      <input id="f-images" name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+      {% if errors.images %}<div class="error-text">{{ errors.images }}</div>{% endif %}
+      <div class="hint">Use a clear photo on a plain background. You can take it with your phone.</div>
+    </div>
+  </section>
+
+  <details class="form-card" {% if form.product_type != "loose" or form.info %}open{% endif %}>
+    <summary><strong>4. Packaged product information</strong> <span class="small faint">(only if it applies)</span></summary>
+    <div class="field section">
+      <label for="f-product_type">Type</label>
+      <select id="f-product_type" name="product_type">
+        {% for value, label in [("loose", "Loose (weighed / packed at the shop)"), ("packaged_food", "Packaged food"), ("packaged_other", "Packaged, non-food")] %}
+        <option value="{{ value }}" {% if form.product_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <p class="small muted">Copy these exactly from the pack. Leave empty what does not apply. Nothing is filled in automatically.</p>
+    <div class="form-grid">
+      {% for key, label, hint in info_fields %}
+      {% if key in ("ingredients", "manufacturer", "other") %}
+      <div class="full">{{ ui.textarea("info_" ~ key, label, form.info.get(key, ""), rows=2, hint=hint) }}</div>
+      {% else %}
+      {{ ui.field("info_" ~ key, label, form.info.get(key, ""), hint=hint) }}
+      {% endif %}
+      {% endfor %}
+    </div>
+  </details>
+
+  <div class="actions-bar">
+    {% set publish_label = "Save & publish" if (scope.is_admin or not require_approval) else "Save & send for approval" %}
+    <button class="btn" type="submit" name="action" value="publish" data-busy="Saving…">{{ publish_label }}</button>
+    <button class="btn btn-quiet" type="submit" name="action" value="draft">Save as draft</button>
+    <button class="btn btn-quiet" type="submit" name="then" value="clone" title="Save, then start a copy for the next size">Save &amp; add another size as new product</button>
+    <a class="btn btn-quiet" href="{{ base }}/products">Cancel</a>
+  </div>
+</form>
+{% endblock %}

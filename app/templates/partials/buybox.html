@@ -1,0 +1,57 @@
+{% import "components/ui.html" as ui %}
+<div id="buybox" class="buybox">
+  {% if v %}
+  <div class="big-price">
+    <strong>{{ v.effective|rupees }}</strong>
+    {% if v.sale_price is not none %}<s>MRP {{ v.price|rupees }}</s><span class="off">Save {{ (v.price - v.effective)|rupees }} ({{ v.percent_off }}%)</span>{% endif %}
+  </div>
+  <p class="tax-note">{{ v.label }} · Price inclusive of taxes</p>
+
+  {% if view.has_choices %}
+  <div id="size-label" class="small"><strong>Choose size</strong></div>
+  <ul class="sizes-pick" aria-labelledby="size-label">
+    {% for opt in view.variants %}
+    <li>
+      <a class="size-opt {% if not opt.in_stock %}is-out{% endif %}" href="/p/{{ product.slug }}?v={{ opt.id }}"
+         hx-get="/p/{{ product.slug }}/buybox?v={{ opt.id }}" hx-target="#buybox" hx-swap="outerHTML"
+         hx-push-url="/p/{{ product.slug }}?v={{ opt.id }}"
+         {% if opt.id == v.id %}aria-current="true"{% endif %}>
+        {{ opt.label }}
+        <small>{{ opt.effective|rupees }}{% if not opt.in_stock %} · out{% endif %}</small>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {{ ui.stock_text(v) }}
+
+  {% if v.in_stock %}
+  <form action="/cart/add" method="post" hx-post="/cart/add" hx-swap="none">
+    {{ ui.csrf(csrf_token) }}
+    <input type="hidden" name="variant_id" value="{{ v.id }}">
+    <label for="qty" class="small">Quantity</label>
+    <div class="qty">
+      <button type="button" data-step="-1" aria-label="Decrease quantity">−</button>
+      <input id="qty" name="qty" type="number" value="1" min="1" max="{{ [v.stock, site.max_quantity_per_item]|min }}" inputmode="numeric">
+      <button type="button" data-step="1" aria-label="Increase quantity">+</button>
+    </div>
+    <div class="buy-actions">
+      <button class="btn" type="submit">{{ ui.icon("cart") }} Add to cart</button>
+      <button class="btn btn-haldi" type="submit" name="buy_now" value="1" hx-post="/cart/add" hx-vals='{"buy_now": "1"}'>Buy now</button>
+      {% if wa_product %}<a class="btn btn-wa" href="{{ wa_product }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} Ask on WhatsApp</a>{% endif %}
+    </div>
+  </form>
+  {% else %}
+  <p class="muted">This size is out of stock right now.{% if view.in_stock %} Try another size above.{% endif %}</p>
+  {% if wa_product %}<a class="btn btn-wa btn-block" href="{{ wa_product }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} Ask when it will be back</a>{% endif %}
+  {% endif %}
+  {% else %}
+  <p class="muted">This product is not available right now.</p>
+  {% endif %}
+
+  <div class="pin-check">
+    <strong class="small">{{ ui.icon("truck") }} Check delivery to your area</strong>
+    {% with store_id=product.store_id, pin_id="pdp" %}{% include "partials/pincode_form.html" %}{% endwith %}
+  </div>
+</div>

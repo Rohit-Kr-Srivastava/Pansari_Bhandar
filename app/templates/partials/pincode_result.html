@@ -1,0 +1,17 @@
+{% import "components/ui.html" as ui %}
+{% if not valid %}
+<p class="pin-no">Please enter a valid 6-digit pincode.</p>
+{% elif not results %}
+<p class="pin-no">We could not check delivery right now. Please try again.</p>
+{% elif available %}
+  {% for r in results if r.available %}
+  <p class="pin-ok">{{ ui.icon("check") }} Delivery available to {{ pincode }}{% if r.area_name %} ({{ r.area_name }}){% endif %}{% if results|length > 1 %} from {{ r.store_name }}{% endif %}.
+    <br><span class="muted">
+      {% if r.eta_text %}Estimated: <strong>{{ r.eta_text }}</strong>. {% endif %}
+      Delivery charge {{ r.base_fee|rupees if r.base_fee else "free" }}{% if r.free_above and r.base_fee %}, free above {{ r.free_above|rupees }}{% endif %}{% if r.min_order %}. Minimum order {{ r.min_order|rupees }}{% endif %}.
+    </span>
+  </p>
+  {% endfor %}
+{% else %}
+<p class="pin-no">{{ ui.icon("info") }} {{ results[0].reason }}</p>
+{% endif %}

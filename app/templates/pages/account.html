@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  <div class="listing-head row-between">
+    <h1>Namaste, {{ user.full_name.split(" ")[0] }}</h1>
+    <form action="/logout" method="post">{{ ui.csrf(csrf_token) }}<button class="btn btn-quiet btn-sm" type="submit">Sign out</button></form>
+  </div>
+  <section aria-labelledby="h-orders">
+    <h2 id="h-orders">My orders</h2>
+    {% if orders %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Order</th><th>Date</th><th>Status</th><th class="num">Total</th></tr></thead>
+        <tbody>
+        {% for o in orders %}
+          <tr>
+            <td><a href="/account/orders/{{ o.order_no }}">{{ o.order_no }}</a></td>
+            <td class="nowrap">{{ o.placed_at|ist("%d %b %Y") }}</td>
+            <td>{{ ui.status_pill(o.status, labels) }}</td>
+            <td class="num">{{ o.total_paise|rupees }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    {{ ui.empty("No orders yet", "Your orders will appear here.", "/shop", "Start shopping", "bag") }}
+    {% endif %}
+  </section>
+
+  <div class="grid-2 section">
+    <section class="panel" aria-labelledby="h-addr">
+      <h2 id="h-addr">Saved addresses</h2>
+      {% for a in addresses %}
+      <p>{% if a.is_default %}<span class="pill">Default</span><br>{% endif %}{{ a.recipient_name }}, {{ a.phone }}<br>{{ a.line1 }}{% if a.line2 %}, {{ a.line2 }}{% endif %}<br>{{ a.city }} {{ a.pincode }}</p>
+      {% else %}
+      <p class="muted">Addresses you use at checkout are saved here.</p>
+      {% endfor %}
+    </section>
+    <section class="panel" id="password" aria-labelledby="h-pw">
+      <h2 id="h-pw">Change password</h2>
+      <form action="/account/password" method="post" data-once>
+        {{ ui.csrf(csrf_token) }}
+        {{ ui.field("current_password", "Current password", "", type="password", required=True, autocomplete="current-password") }}
+        {{ ui.field("new_password", "New password", "", type="password", required=True, autocomplete="new-password", hint="At least 8 characters. Other devices will be signed out.") }}
+        <button class="btn btn-quiet" type="submit">Change password</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

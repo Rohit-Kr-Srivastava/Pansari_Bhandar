@@ -1,0 +1,24 @@
+{% extends layout %}
+{% block content %}
+<h1>Inventory</h1>
+<p class="muted small">Type the new stock and press Save, or use +/− buttons for quick changes. Changes are saved straight away.</p>
+<form class="row section" method="get" action="{{ base }}/inventory">
+  <label class="sr-only" for="iq">Search</label>
+  <input id="iq" name="q" type="search" value="{{ q }}" placeholder="Product or SKU">
+  <label class="check"><input type="checkbox" name="low" value="1" {% if only_low %}checked{% endif %}> Low stock only</label>
+  <button class="btn btn-sm btn-quiet" type="submit">Filter</button>
+</form>
+{% if variants %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Product</th><th>Size</th><th>SKU</th>{% if scope.is_admin %}<th>Store</th>{% endif %}<th class="num">Stock</th><th>Update</th></tr></thead>
+    <tbody>
+      {% for v in variants %}{% include "manage/_inventory_row.html" %}{% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ ui.pagination(page, pages, base ~ "/inventory", {"q": q, "low": "1" if only_low else ""}) }}
+{% else %}
+{{ ui.empty("Nothing to show", "No items match. Add products first, or clear the filter.", base ~ "/inventory", "Show all") }}
+{% endif %}
+{% endblock %}

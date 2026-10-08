@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block head %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block body %}
+<div class="mg">
+  <header class="mg-top">
+    <div class="wrap">
+      <a class="brand" href="{{ base }}">
+        <svg class="brand-mark" aria-hidden="true"><use href="#i-mark"></use></svg>
+        <span class="brand-name">{{ area_title }}</span>
+      </a>
+      <span class="mg-tag">{{ area_tag }}</span>
+      <div class="header-actions">
+        <a href="/" class="small">View shop</a>
+        <form action="/logout" method="post">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm btn-quiet" type="submit">Sign out</button></form>
+      </div>
+    </div>
+  </header>
+  <div class="mg-body">
+    <nav class="mg-nav" aria-label="{{ area_tag }} menu">
+      {# the most specific menu entry that matches this page is the current one #}
+      {% set ns = namespace(best="") %}
+      {% for url, label in menu %}{% if (current_path == url or current_path.startswith(url ~ "/")) and url|length > ns.best|length %}{% set ns.best = url %}{% endif %}{% endfor %}
+      <ul>
+        {% for url, label in menu %}
+        <li><a href="{{ url }}" {% if url == ns.best %}aria-current="page"{% endif %}>{{ label }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+    <main id="main" class="mg-main">
+      <div class="wrap">
+        {% for kind, message in flashes %}<div class="alert alert-{{ kind }}" role="{{ 'alert' if kind == 'error' else 'status' }}">{{ message }}</div>{% endfor %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}

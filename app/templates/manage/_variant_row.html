@@ -1,0 +1,51 @@
+{% import "components/ui.html" as ui %}
+{% set key = row.id|string if row.id else "new" ~ i %}
+<div class="variant">
+  <div class="variant-head">
+    <span>{{ "Size " ~ (i + 1) if i is number else "New size" }}{% if row.id %} <span class="faint small">SKU {{ row.sku }}</span>{% endif %}</span>
+    <label class="check small"><input type="checkbox" name="v_remove" value="{{ key }}" {% if row.remove %}checked{% endif %}> Remove</label>
+  </div>
+  <input type="hidden" name="v_id" value="{{ row.id or '' }}">
+  <div class="quick-sizes" aria-label="Quick sizes">
+    {% for q in ["50 g", "100 g", "250 g", "500 g", "1 kg"] %}
+    <button type="button" data-quick-size="{{ q }}">{{ q }}</button>
+    {% endfor %}
+    <button type="button" data-quick-size="1 piece">1 piece</button>
+  </div>
+  <div class="variant-grid">
+    <div class="field">
+      <label for="va-{{ key }}">Weight / count</label>
+      <input id="va-{{ key }}" name="v_amount" type="number" step="any" min="0" inputmode="decimal" value="{{ row.amount }}" required>
+    </div>
+    <div class="field">
+      <label for="vu-{{ key }}">Unit</label>
+      <select id="vu-{{ key }}" name="v_unit">
+        {% for value, label in unit_choices %}<option value="{{ value }}" {% if row.unit == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="vp-{{ key }}">Price ₹</label>
+      <input id="vp-{{ key }}" name="v_price" type="text" inputmode="decimal" value="{{ row.price }}" required placeholder="e.g. 55">
+    </div>
+    <div class="field">
+      <label for="vs-{{ key }}">Sale price ₹ <span class="faint small">(optional)</span></label>
+      <input id="vs-{{ key }}" name="v_sale" type="text" inputmode="decimal" value="{{ row.sale }}">
+    </div>
+    <div class="field">
+      <label for="vq-{{ key }}">Stock</label>
+      <input id="vq-{{ key }}" name="v_stock" type="number" min="0" step="1" inputmode="numeric" value="{{ row.stock }}" placeholder="0">
+    </div>
+    <div class="field">
+      <label for="vk-{{ key }}">SKU <span class="faint small">(auto if empty)</span></label>
+      <input id="vk-{{ key }}" name="v_sku" type="text" value="{{ row.sku }}" maxlength="64" autocapitalize="characters">
+    </div>
+    <div class="field">
+      <label for="vl-{{ key }}">Label <span class="faint small">(auto)</span></label>
+      <input id="vl-{{ key }}" name="v_label" type="text" value="{{ row.label }}" maxlength="60" placeholder="250 g">
+    </div>
+  </div>
+  <input type="hidden" name="v_threshold" value="{{ row.threshold }}">
+  <input type="hidden" name="v_stock_was" value="{{ row.stock_was }}">
+  <label class="check small"><input type="checkbox" name="v_inactive" value="{{ key }}" {% if not row.active %}checked{% endif %}> Hide this size from customers</label>
+  {% if errors.get("v" ~ i) %}<div class="error-text">{{ errors["v" ~ i] }}</div>{% endif %}
+</div>

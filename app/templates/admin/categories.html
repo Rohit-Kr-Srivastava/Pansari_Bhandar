@@ -1,0 +1,47 @@
+{% extends layout %}
+{% macro cat_form(c, action, label) %}
+<form method="post" action="{{ action }}" class="section">
+  {{ ui.csrf(csrf_token) }}
+  {% set cid = c.id if c else "new" %}
+  <div class="form-grid">
+    <div class="field"><label for="cn-{{ cid }}">Name</label><input id="cn-{{ cid }}" name="name" required maxlength="120" value="{{ c.name if c else '' }}"></div>
+    <div class="field"><label for="ch-{{ cid }}">Hindi name</label><input id="ch-{{ cid }}" name="name_hi" maxlength="120" value="{{ (c.name_hi or '') if c else '' }}"></div>
+    <div class="field"><label for="cp-{{ cid }}">Parent</label>
+      <select id="cp-{{ cid }}" name="parent_id"><option value="">— Top level —</option>
+        {% for t in tops if not c or t.id != c.id %}<option value="{{ t.id }}" {% if c and c.parent_id == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label for="cs-{{ cid }}">Order</label><input id="cs-{{ cid }}" name="sort_order" type="number" min="0" value="{{ c.sort_order if c else 0 }}"></div>
+    {% if not c %}<div class="field"><label for="cg-new">URL name <span class="faint small">(optional)</span></label><input id="cg-new" name="slug" maxlength="80" placeholder="spices-masala"></div>{% endif %}
+    <div class="field full"><label for="cd-{{ cid }}">Description <span class="faint small">(shown on the category page and in search results)</span></label>
+      <textarea id="cd-{{ cid }}" name="description" rows="2" maxlength="1000">{{ (c.description or '') if c else '' }}</textarea></div>
+    <div class="field"><label class="check"><input type="checkbox" name="is_active" value="1" {% if not c or c.is_active %}checked{% endif %}> Visible in the shop</label></div>
+  </div>
+  <button class="btn btn-sm" type="submit">{{ label }}</button>
+</form>
+{% endmacro %}
+{% block content %}
+<h1>Categories</h1>
+<p class="muted small">Two levels: a category and its subcategories. Hide a category instead of deleting it if it has products.</p>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Category</th><th>URL</th><th class="num">Products</th><th>Visible</th><th></th></tr></thead>
+    <tbody>
+    {% for c in cats %}
+      <tr>
+        <td>{% if c.parent_id %}<span class="faint">↳ </span>{% endif %}<strong>{{ c.name }}</strong> {% if c.name_hi %}<span class="hi" lang="hi">{{ c.name_hi }}</span>{% endif %}</td>
+        <td class="small"><a href="/c/{{ c.slug }}" target="_blank" rel="noopener">/c/{{ c.slug }}</a></td>
+        <td class="num">{{ counts.get(c.id, 0) }}</td>
+        <td>{{ "Yes" if c.is_active else "Hidden" }}</td>
+        <td>
+          <details class="edit"><summary>Edit</summary>
+            {{ cat_form(c, "/admin/categories/" ~ c.id, "Save") }}
+            {% if not counts.get(c.id) %}<form method="post" action="/admin/categories/{{ c.id }}/delete" data-confirm="Delete {{ c.name }}?">{{ ui.csrf(csrf_token) }}<button class="btn btn-sm btn-danger">Delete</button></form>{% endif %}
+          </details>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<section class="form-card section"><h2>Add a category</h2>{{ cat_form(None, "/admin/categories", "Add category") }}</section>
+{% endblock %}

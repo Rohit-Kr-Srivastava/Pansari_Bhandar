@@ -1,0 +1,27 @@
+{% extends layout %}
+{% block content %}
+<h1>Customers</h1>
+<form class="row section" method="get" action="/admin/customers">
+  <label class="sr-only" for="cq">Search</label>
+  <input id="cq" name="q" type="search" value="{{ q }}" placeholder="Name, phone or email">
+  <button class="btn btn-sm btn-quiet" type="submit">Search</button>
+</form>
+{% if users %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Joined</th><th>Last sign-in</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td>{{ u.full_name }}</td><td>{{ u.phone or "" }}</td><td class="small">{{ u.email or "" }}</td>
+        <td class="small nowrap">{{ u.created_at|ist("%d %b %Y") }}</td>
+        <td class="small nowrap">{{ u.last_login_at|ist("%d %b %Y") if u.last_login_at else "—" }}</td>
+        <td>{{ "Active" if u.is_active else "Blocked" }}</td>
+        <td><form method="post" action="/admin/customers/{{ u.id }}/toggle" {% if u.is_active %}data-confirm="Block {{ u.full_name }}? They will be signed out and cannot order."{% endif %}>{{ ui.csrf(csrf_token) }}<button class="btn btn-sm {{ 'btn-danger' if u.is_active else '' }}">{{ "Block" if u.is_active else "Unblock" }}</button></form></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}{{ ui.empty("No customers found") }}{% endif %}
+{% endblock %}

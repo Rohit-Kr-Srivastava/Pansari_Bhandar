@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap auth auth-wide">
+  <div class="panel">
+    <p class="pin-ok">{{ ui.icon("check", "i-lg") }}</p>
+    <h1>Thank you! Your order is placed.</h1>
+    <p>Order number <strong>{{ order.order_no }}</strong>
+      <button class="link-btn small" type="button" data-copy="{{ order.order_no }}">Copy</button></p>
+    <p class="muted">We will call or WhatsApp you on {{ order.delivery_address.phone if order.delivery_address else "your number" }} to confirm.
+      {% if is_pickup %}Collect your order from the shop once we tell you it is ready.{% endif %}</p>
+    {% set d = order.deliveries[0] if order.deliveries else None %}
+    {% if d and not is_pickup %}<p>Expected delivery: <strong>{{ d.scheduled_date.strftime("%a, %d %b") if d.scheduled_date else "soon" }}</strong>{% if d.slot_label %}, {{ d.slot_label }}{% endif %}</p>{% endif %}
+    <ul class="review-list">
+      {% for i in order.items %}<li><span>{{ i.product_name }} {{ i.variant_label }} × {{ i.quantity }}</span><span>{{ i.line_total_paise|rupees }}</span></li>{% endfor %}
+    </ul>
+    <div class="sum-row"><span>Subtotal</span><span>{{ order.subtotal_paise|rupees }}</span></div>
+    {% if order.discount_paise %}<div class="sum-row"><span>Discount</span><span class="save">−{{ order.discount_paise|rupees }}</span></div>{% endif %}
+    <div class="sum-row"><span>Delivery</span><span>{{ order.delivery_fee_paise|rupees if order.delivery_fee_paise else "Free" }}</span></div>
+    <div class="sum-row total"><span>To pay on {{ "pickup" if is_pickup else "delivery" }}</span><span>{{ order.total_paise|rupees }}</span></div>
+    <div class="row">
+      <a class="btn" href="/account/orders/{{ order.order_no }}">Track order</a>
+      {% if wa_order %}<a class="btn btn-wa" href="{{ wa_order }}" rel="noopener" target="_blank">{{ ui.icon("wa") }} WhatsApp us</a>{% endif %}
+      <a class="btn btn-quiet" href="/shop">Continue shopping</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

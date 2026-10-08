@@ -1,0 +1,66 @@
+{% if site.announcement_enabled and site.announcement %}
+<div class="announce">{{ site.announcement }}</div>
+{% endif %}
+<header class="site-header">
+  <div class="wrap header-row">
+    <details class="drawer">
+      <summary class="icon-btn" aria-label="Menu">{{ ui.icon("menu") }}</summary>
+      <nav class="drawer-panel" aria-label="Shop categories">
+        <a class="brand" href="/">
+          <svg class="brand-mark" aria-hidden="true"><use href="#i-mark"></use></svg>
+          <span><span class="brand-name">{{ site.business_name }}</span>
+          {% if site.business_name_hi %}<span class="brand-hi">{{ site.business_name_hi }}</span>{% endif %}</span>
+        </a>
+        <h2>Shop</h2>
+        <ul>
+          <li><a href="/shop">All products</a></li>
+          {% for c in nav %}<li><a href="/c/{{ c.slug }}">{{ c.name }}{% if c.name_hi %} <span class="hi" lang="hi">{{ c.name_hi }}</span>{% endif %}</a></li>{% endfor %}
+        </ul>
+        <h2>Help</h2>
+        <ul>
+          <li><a href="/delivery">Delivery areas</a></li>
+          <li><a href="/contact">Contact &amp; shop address</a></li>
+          <li><a href="/about">About us</a></li>
+          {% if user %}<li><a href="/account">My orders</a></li>{% else %}<li><a href="/login">Sign in</a></li>{% endif %}
+        </ul>
+      </nav>
+    </details>
+
+    <a class="brand" href="/" aria-label="{{ site.business_name }} home">
+      <svg class="brand-mark" aria-hidden="true"><use href="#i-mark"></use></svg>
+      <span>
+        <span class="brand-name">{{ site.business_name }}</span>
+        {% if site.business_name_hi %}<span class="brand-hi">{{ site.business_name_hi }}{% if site.locality %} · {{ site.locality }}{% endif %}</span>{% endif %}
+      </span>
+    </a>
+
+    <form class="search" action="/search" method="get" role="search">
+      <label class="sr-only" for="q">Search products</label>
+      <input id="q" name="q" type="search" placeholder="Search haldi, jeera, agarbatti…" value="{{ request.query_params.get('q', '')[:80] }}" autocomplete="off" enterkeyhint="search">
+      <button type="submit" aria-label="Search">{{ ui.icon("search") }}</button>
+    </form>
+
+    <div class="header-actions">
+      {% if user %}
+        {% if user.role.value == "admin" %}<a class="icon-btn" href="/admin">{{ ui.icon("box") }}<span class="label">Admin</span></a>
+        {% elif user.role.value == "seller" %}<a class="icon-btn" href="/seller">{{ ui.icon("store") }}<span class="label">My shop</span></a>
+        {% else %}<a class="icon-btn" href="/account">{{ ui.icon("user") }}<span class="label">My orders</span></a>{% endif %}
+      {% else %}
+        <a class="icon-btn" href="/login">{{ ui.icon("user") }}<span class="label">Sign in</span></a>
+      {% endif %}
+      <a class="icon-btn" href="/cart">
+        {{ ui.icon("cart") }}<span class="label">Cart</span>
+        {% with oob=False %}{% include "partials/cart_count.html" %}{% endwith %}
+      </a>
+    </div>
+  </div>
+  <div class="toran" aria-hidden="true"></div>
+</header>
+<nav class="nav-strip" aria-label="Categories">
+  <div class="wrap">
+    <ul>
+      <li><a href="/shop" {% if current_path == "/shop" %}aria-current="page"{% endif %}>All</a></li>
+      {% for c in nav %}<li><a href="/c/{{ c.slug }}" {% if current_path == "/c/" ~ c.slug %}aria-current="page"{% endif %}>{{ c.name }}</a></li>{% endfor %}
+    </ul>
+  </div>
+</nav>
